@@ -1,0 +1,380 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Atrium Interactive Experience</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              "primary-dim": "#005c3b",
+              surface: "#d9ffee",
+              "surface-container-low": "#c0fee5",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-surface-variant": "#306554",
+              outline: "#4c816e",
+              "outline-variant": "#82b8a4",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            fontFamily: {
+              headline: ["Inter"],
+              body: ["Inter"],
+              label: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+
+      /* Spring Animation for Button Interaction */
+      .btn-spring-active:active {
+        transform: scale(0.95);
+        background-color: #ffffff !important;
+        color: #006944 !important;
+        transition: none;
+      }
+
+      .btn-spring-return {
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      /* Airy background aesthetic */
+      .atrium-mesh {
+        background-color: #d9ffee;
+        background-image:
+          radial-gradient(at 0% 0%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 100% 0%, #7efdbe 0px, transparent 50%),
+          radial-gradient(at 100% 100%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+      }
+
+      body {
+        min-height: 100dvh;
+      }
+
+      /* String List Animation Styles */
+      .string-item {
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        opacity: 1;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+
+      /* Custom Scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #4c816e;
+        border-radius: 10px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #006944;
+      }
+
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #4c816e transparent;
+        mask-image: linear-gradient(
+          to bottom,
+          transparent,
+          black 10%,
+          black 95%,
+          transparent
+        );
+      }
+
+      .string-hover-effect:hover {
+        transform: scale(1.05);
+        cursor: pointer;
+      }
+
+      @keyframes pop-up {
+        0% {
+          transform: scale(1);
+        }
+
+        50% {
+          transform: scale(1.15);
+        }
+
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .animate-pop-up {
+        animation: pop-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* Sidebar transitions */
+      #sidebar {
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #sidebar.closed {
+        transform: translateX(-100%);
+      }
+
+      #sidebar-overlay {
+        transition: opacity 0.4s ease;
+      }
+
+      #sidebar-overlay.closed {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body
+    class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col overflow-hidden"
+  >
+    <!-- Sidebar Overlay -->
+    <div
+      class="fixed inset-0 bg-black/20 z-40 closed backdrop-blur-sm"
+      id="sidebar-overlay"
+    ></div>
+    <!-- Sidebar -->
+    <aside
+      class="fixed top-0 left-0 h-full w-80 bg-surface-container-lowest/90 backdrop-blur-xl z-50 closed shadow-2xl border-r border-outline-variant/30 flex flex-col p-6"
+      id="sidebar"
+    >
+      <div class="flex items-center justify-between mb-12">
+        <h2 class="text-2xl font-extrabold text-primary">選單</h2>
+        <button
+          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors"
+          id="close-sidebar"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <nav class="flex flex-col gap-4">
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>選擇模板</span>
+        </button>
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>我的等級</span>
+        </button>
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>我的成就</span>
+        </button>
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>檢舉</span>
+        </button>
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>論壇</span>
+        </button>
+        <button
+          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
+        >
+          <span>商店</span>
+        </button>
+      </nav>
+    </aside>
+    <!-- Main Content -->
+    <main
+      class="flex-grow flex flex-col items-center justify-end px-8 text-center relative pb-[10vh]"
+    >
+      <!-- Top-Left Menu Icon -->
+      <div class="absolute top-8 left-8 z-30">
+        <button
+          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant w-12 h-12 rounded-xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant group"
+          id="menu-toggle"
+        >
+          <span class="material-symbols-outlined text-3xl">menu</span>
+        </button>
+      </div>
+      <!-- Top-Center Motto Box -->
+      <div
+        class="absolute top-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[280px] sm:max-w-xs px-4"
+      >
+        <div
+          class="bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-4 shadow-lg flex flex-col min-h-[80px] items-start text-left"
+        >
+          <span
+            class="text-primary/70 text-[10px] font-bold uppercase tracking-widest"
+            >今天的至理名言</span
+          >
+          <!-- Empty area for the motto content as requested -->
+          <div
+            class="w-full h-4 bg-surface-container-high/20 rounded-full animate-pulse hidden"
+          ></div>
+        </div>
+      </div>
+      <!-- Top-Right User Box -->
+      <div class="absolute top-8 right-8 z-30">
+        <button
+          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant font-medium text-sm group"
+          id="user-box"
+        >
+          <span class="material-symbols-outlined text-xl">account_circle</span>
+          <span>用戶名：username</span>
+        </button>
+      </div>
+      <!-- Floating Glass Accents -->
+      <div
+        class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary-container/20 rounded-full blur-[100px] -z-10"
+      ></div>
+      <div
+        class="absolute bottom-1/4 right-1/4 w-[35rem] h-[35rem] bg-white/40 rounded-full blur-[100px] -z-10"
+      ></div>
+      <div
+        class="absolute top-10 right-10 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] -z-10"
+      ></div>
+      <div class="w-full max-w-lg relative flex flex-col items-center">
+        <!-- Scrollable String Container Wrap -->
+        <div
+          class="w-full max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse px-4 py-8 mb-4"
+          id="scroll-container"
+        >
+          <!-- Strings will be injected here into this internal div -->
+          <div class="flex flex-col items-center w-full" id="string-carousel">
+            <!-- Items appear here -->
+          </div>
+        </div>
+        <!-- Huge Interactive Primary Button -->
+        <button
+          class="group relative w-full py-8 bg-primary text-on-primary font-extrabold text-3xl rounded-full shadow-[0px_16px_48px_rgba(0,54,41,0.15)] hover:shadow-[0px_20px_56px_rgba(0,54,41,0.2)] btn-spring-return btn-spring-active flex items-center justify-center gap-6 active:shadow-sm z-20"
+          id="interactive-btn"
+        >
+          <span>互動按鈕</span>
+          <span class="material-symbols-outlined text-4xl" data-icon="touch_app"
+            >touch_app</span
+          >
+        </button>
+      </div>
+    </main>
+    <script>
+      const btn = document.getElementById("interactive-btn");
+      const container = document.getElementById("string-carousel");
+      const scrollContainer = document.getElementById("scroll-container");
+      const sequence = ["a", "b", "c"];
+      let currentIndex = 0;
+
+      btn.addEventListener("click", () => {
+        const char = sequence[currentIndex];
+        currentIndex = (currentIndex + 1) % sequence.length;
+
+        const wrapper = document.createElement("div");
+        wrapper.className =
+          "string-item pointer-events-auto flex items-center justify-center gap-3 string-hover-effect";
+
+        wrapper.innerHTML = `
+            <div class="bg-white px-8 py-4 rounded-2xl shadow-lg border border-white/50 flex items-center justify-center min-w-[80px]">
+                <span class="text-3xl font-extrabold text-primary">${char}</span>
+            </div>
+            <button class="pin-btn bg-secondary w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg hover:bg-primary transition-colors duration-200">
+                <span class="material-symbols-outlined text-2xl">push_pin</span>
+            </button>
+        `;
+
+        const pinBtn = wrapper.querySelector(".pin-btn");
+        pinBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          pinBtn.classList.remove("animate-pop-up");
+          void pinBtn.offsetWidth;
+          pinBtn.classList.add("animate-pop-up");
+        });
+
+        container.appendChild(wrapper);
+
+        requestAnimationFrame(() => {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        });
+      });
+
+      const userBox = document.getElementById("user-box");
+      userBox.addEventListener("click", () => {
+        userBox.classList.remove("animate-pop-up");
+        void userBox.offsetWidth;
+        userBox.classList.add("animate-pop-up");
+      });
+
+      // Sidebar Logic
+      const menuToggle = document.getElementById("menu-toggle");
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebar-overlay");
+      const closeSidebar = document.getElementById("close-sidebar");
+
+      const toggleSidebar = () => {
+        const isOpen = !sidebar.classList.contains("closed");
+        if (isOpen) {
+          sidebar.classList.add("closed");
+          sidebarOverlay.classList.add("closed");
+        } else {
+          sidebar.classList.remove("closed");
+          sidebarOverlay.classList.remove("closed");
+
+          // Pop up animation for the hamburger icon when clicked
+          menuToggle.classList.remove("animate-pop-up");
+          void menuToggle.offsetWidth;
+          menuToggle.classList.add("animate-pop-up");
+        }
+      };
+
+      menuToggle.addEventListener("click", toggleSidebar);
+      closeSidebar.addEventListener("click", toggleSidebar);
+      sidebarOverlay.addEventListener("click", toggleSidebar);
+
+      // Sidebar button effects
+      const sidebarBtns = document.querySelectorAll(".sidebar-btn");
+      sidebarBtns.forEach((sbBtn) => {
+        sbBtn.addEventListener("click", () => {
+          // They already have btn-spring-active class in HTML,
+          // so CSS :active handles the shrink/white effect.
+        });
+      });
+    </script>
+  </body>
+</html>

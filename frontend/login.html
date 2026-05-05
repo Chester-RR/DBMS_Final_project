@@ -1,0 +1,240 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              "primary-dim": "#005c3b",
+              surface: "#d9ffee",
+              "surface-container-low": "#c0fee5",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-surface-variant": "#306554",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            fontFamily: {
+              headline: ["Manrope"],
+              label: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+
+      .hero-gradient {
+        background: linear-gradient(180deg, #00649a 0%, #005787 100%);
+      }
+
+      .playful {
+        font-family: "Comic Neue", cursive;
+        display: inline-block;
+        transform: rotate(-3deg) translateY(-2px);
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-surface font-body text-on-surface min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container"
+  >
+    <!-- Main Content Canvas -->
+    <main
+      class="flex-grow flex items-center justify-center bg-surface-container-low px-4 sm:px-6 lg:px-8"
+    >
+      <!-- The Hero Card (Nested Layering) -->
+      <div
+        class="w-full max-auto max-w-[480px] bg-surface-container-lowest rounded-xl p-[4rem_3rem_5rem_3rem] shadow-[0px_12px_32px_rgba(44,52,55,0.06)]"
+      >
+        <!-- Headline Section -->
+        <div class="mb-10 text-center">
+          <h1
+            class="font-headline text-[2rem] font-extrabold text-on-surface tracking-[-0.02em] mb-2 leading-tight"
+          >
+            While AI thinks
+          </h1>
+          <p class="font-body text-sm text-on-surface-variant font-medium">
+            <span class="playful"><strong>Mess around with words</strong></span>
+          </p>
+        </div>
+        <!-- Form Content -->
+        <form class="space-y-6">
+          <!-- Username/Email Field -->
+          <div class="space-y-2">
+            <label
+              class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
+              for="email"
+            >
+              Username or Email
+            </label>
+            <div class="relative">
+              <input
+                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
+                id="email"
+                type="email"
+              />
+            </div>
+          </div>
+          <!-- Password Field -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label
+                class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
+                for="password"
+              >
+                Password
+              </label>
+              <a
+                class="text-xs font-semibold text-primary hover:text-primary-dim transition-colors"
+                href="#"
+              >
+                Forgot Password?
+              </a>
+            </div>
+            <div class="relative group">
+              <input
+                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
+                id="password"
+                placeholder="••••••••"
+                type="password"
+              />
+              <button
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50 hover:opacity-100 transition-opacity"
+                id="password-toggle"
+                type="button"
+              >
+                <span
+                  class="material-symbols-outlined"
+                  data-icon="visibility"
+                  id="eye-icon"
+                  >visibility</span
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <div class="pt-4">
+            <button
+              id="login-btn"
+              class="w-full bg-gray-400 text-white font-headline text-base font-bold py-4 rounded-full btn-spring-return btn-spring-active"
+              type="submit"
+            >
+              Login
+            </button>
+          </div>
+        </form>
+        <!-- Bottom Registration Link -->
+        <div class="mt-8 text-center">
+          <p class="text-sm font-body text-on-surface-variant">
+            Don't have an account?
+            <a
+              class="font-bold text-primary hover:text-primary-dim underline decoration-primary/30 underline-offset-4 transition-all"
+              href="#"
+            >
+              Sign Up
+            </a>
+          </p>
+        </div>
+      </div>
+    </main>
+  </body>
+  <script>
+    const passwordInput = document.getElementById("password");
+    const toggleBtn = document.getElementById("password-toggle");
+    const eyeIcon = document.getElementById("eye-icon");
+    const loginBtn = document.getElementById("login-btn");
+
+    toggleBtn.addEventListener("click", () => {
+      const isPassword = passwordInput.getAttribute("type") === "password";
+
+      // Toggle input type
+      passwordInput.setAttribute("type", isPassword ? "text" : "password");
+
+      // Animate icon change (simple fade)
+      eyeIcon.style.opacity = "0";
+
+      setTimeout(() => {
+        // Toggle Material Symbol icon
+        eyeIcon.textContent = isPassword ? "visibility_off" : "visibility";
+        eyeIcon.style.opacity = "1";
+      }, 100);
+    });
+
+    loginBtn.addEventListener("click", (e) => {
+      e.preventDefault(); // 先擋住提交（測試動畫用）
+
+      // 1️⃣ 變色
+      loginBtn.classList.add("active");
+
+      // 2️⃣ pop 動畫
+      loginBtn.classList.add("clicked");
+
+      // 3️⃣ 清掉動畫 class（讓下次可以再觸發）
+      setTimeout(() => {
+        loginBtn.classList.remove("clicked");
+      }, 250);
+    });
+  </script>
+  <style>
+    #eye-icon {
+      transition: opacity 0.15s ease-in-out;
+    }
+
+    /* press down */
+    .btn-spring-active:active {
+      transform: scale(0.95);
+      background-color: #005c3b; /* 深綠 */
+      transition: none;
+    }
+
+    /* pop up  */
+    .btn-spring-return {
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(1);
+      }
+      40% {
+        transform: scale(1.08);
+      }
+      100% {
+        transform: scale(1.03);
+      }
+    }
+  </style>
+</html>
