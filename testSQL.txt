@@ -1,0 +1,49 @@
+-- Level system test users
+-- Rule: every 5 generated sentences = +1 level, max level 50
+
+DELETE FROM UserAvatarFrame
+WHERE user_id IN (9001, 9002, 9003, 9004, 9005, 9006);
+
+DELETE FROM TitleAward
+WHERE user_id IN (9001, 9002, 9003, 9004, 9005, 9006);
+
+DELETE FROM User
+WHERE user_id IN (9001, 9002, 9003, 9004, 9005, 9006);
+
+INSERT INTO User (
+  user_id,
+  user_name,
+  email,
+  password,
+  created_at,
+  level,
+  coin_balance,
+  generation_count,
+  admin
+)
+VALUES
+  (9001, 'level_test_lv1',  'level_test_lv1@example.com',  'test-password', NOW(), 1, 0, 0,   FALSE),
+  (9002, 'level_test_lv5',  'level_test_lv5@example.com',  'test-password', NOW(), 1, 0, 20,  FALSE),
+  (9003, 'level_test_lv10', 'level_test_lv10@example.com', 'test-password', NOW(), 1, 0, 45,  FALSE),
+  (9004, 'level_test_lv3x', 'level_test_lv15@example.com', 'test-password', NOW(), 1, 0, 180,  FALSE),
+  (9005, 'level_test_30d',  'level_test_30d@example.com',  'test-password', DATE_SUB(NOW(), INTERVAL 31 DAY), 1, 0, 10, FALSE),
+  (9006, 'level_test_max',  'level_test_max@example.com',  'test-password', NOW(), 1, 0, 245, FALSE);
+
+SELECT
+  user_id,
+  user_name,
+  generation_count,
+  level,
+  created_at
+FROM User
+WHERE user_id IN (9001, 9002, 9003, 9004, 9005, 9006)
+ORDER BY user_id;
+
+
+---------------啟動用的放下面------------------------------------------------------
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9005"
+
+
+測試:
+localStorage.setItem("user_id", "9003");
+location.reload();

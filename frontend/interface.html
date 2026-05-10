@@ -161,6 +161,36 @@
         opacity: 0;
         pointer-events: none;
       }
+
+      /* User profile card: title and avatar frame display */
+      #user-box {
+        --frame-border: #82b8a4;
+        --frame-glow: rgba(0, 105, 68, 0.18);
+        --frame-bg: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82));
+        background: var(--frame-bg);
+        border-color: var(--frame-border);
+        box-shadow: 0 10px 28px var(--frame-glow);
+      }
+
+      #user-box::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border: 2px solid var(--frame-border);
+        border-radius: 1.1rem;
+        opacity: 0.55;
+        pointer-events: none;
+      }
+
+      #avatar-frame {
+        border-color: var(--frame-border);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55), 0 0 18px var(--frame-glow);
+      }
+
+      #user-title {
+        color: var(--frame-border);
+        text-shadow: 0 1px 8px rgba(255,255,255,0.75);
+      }
     </style>
   </head>
 
@@ -252,11 +282,22 @@
       <!-- Top-Right User Box -->
       <div class="absolute top-8 right-8 z-30">
         <button
-          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant font-medium text-sm group"
+          class="relative min-w-[230px] border px-4 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 text-on-surface-variant group"
           id="user-box"
         >
-          <span class="material-symbols-outlined text-xl">account_circle</span>
-          <span>用戶名：username</span>
+          <span
+            class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
+            id="avatar-frame"
+          >
+            <span class="material-symbols-outlined text-3xl">account_circle</span>
+          </span>
+          <span class="flex flex-col items-start leading-tight text-left">
+            <span class="flex items-center gap-2">
+              <span class="font-extrabold text-base text-on-surface" id="user-name">username</span>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary" id="user-level">Lv.1</span>
+            </span>
+            <span class="text-xs font-bold tracking-wide" id="user-title">無名生成者</span>
+          </span>
         </button>
       </div>
       <!-- Floating Glass Accents -->
@@ -298,6 +339,51 @@
       const scrollContainer = document.getElementById("scroll-container");
       const sequence = ["a", "b", "c"];
       let currentIndex = 0;
+      const currentUserId = localStorage.getItem("user_id") || localStorage.getItem("userId") || "1";
+
+      function applyUserProfile(profile) {
+        const userName = document.getElementById("user-name");
+        const userLevel = document.getElementById("user-level");
+        const userTitle = document.getElementById("user-title");
+        const frame = profile.currentFrame;
+
+        userName.textContent = profile.user.name || "username";
+        userLevel.textContent = `Lv.${profile.user.level}`;
+        userTitle.textContent = profile.currentTitle.title_name || "無名生成者";
+
+        userBox.style.setProperty("--frame-border", frame.border_color || "#82b8a4");
+        userBox.style.setProperty("--frame-glow", frame.glow_color || "rgba(0, 105, 68, 0.18)");
+        userBox.style.setProperty("--frame-bg", frame.background_css || "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82))");
+      }
+
+      async function loadUserProfile() {
+        try {
+          const response = await fetch(`http://localhost:3000/level/${currentUserId}`);
+          const data = await response.json();
+
+          if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Level profile is not ready yet:", error);
+        }
+      }
+
+      async function recordGeneration() {
+        try {
+          const response = await fetch(`http://localhost:3000/level/${currentUserId}/generation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Generation count was not recorded:", error);
+        }
+      }
 
       btn.addEventListener("click", () => {
         const char = sequence[currentIndex];
@@ -326,6 +412,8 @@
 
         container.appendChild(wrapper);
 
+        recordGeneration();
+
         requestAnimationFrame(() => {
           scrollContainer.scrollTo({
             top: scrollContainer.scrollHeight,
@@ -340,6 +428,8 @@
         void userBox.offsetWidth;
         userBox.classList.add("animate-pop-up");
       });
+
+      loadUserProfile();
 
       // Sidebar Logic
       const menuToggle = document.getElementById("menu-toggle");

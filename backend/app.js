@@ -8,6 +8,7 @@ import express from "express";
 import mysqlConnectionPool from "./lib/mysql.js";
 
 import loginRoutes from "./features/login.js"; //之後開發好的功能就import
+import levelRoutes from "./features/level.js"; // level / title / avatar frame routes
 
 const app = express();
 
@@ -18,10 +19,12 @@ app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); // 設定前端網站的請求  事實上不會對所有的網站都開放  之後要改
   res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   next();
 });
 
 app.use("/user", loginRoutes); ////用到功能的middleware
+app.use("/level", levelRoutes); //// 等級、稱號、頭像框功能
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
