@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>頭像造型商店</title>
+
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, "Microsoft JhengHei", sans-serif;
+        background:
+          radial-gradient(circle at top left, #c0fee5 0, transparent 35%),
+          radial-gradient(circle at bottom right, #a9f1d6 0, transparent 35%),
+          #d9ffee;
+        color: #003629;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(0, 105, 68, 0.15);
+        border-radius: 24px;
+        padding: 18px 24px;
+        box-shadow: 0 10px 30px rgba(0, 54, 41, 0.12);
+      }
+
+      .back-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 12px 22px;
+        background: #306554;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .back-btn:hover {
+        background: #003629;
+      }
+
+      .user-panel {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-weight: bold;
+        color: #006944;
+      }
+
+      .avatar-preview {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #006944, #a9f1d6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 6px 18px rgba(0, 105, 68, 0.25);
+      }
+
+      .hero {
+        text-align: center;
+        margin: 42px 0 30px;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: 42px;
+        color: #006944;
+      }
+
+      .hero p {
+        margin-top: 12px;
+        color: #306554;
+        font-size: 16px;
+      }
+
+      .section-title {
+        font-size: 24px;
+        color: #003629;
+        margin: 32px 0 18px;
+      }
+
+      .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 22px;
+      }
+
+      .item-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 105, 68, 0.12);
+        border-radius: 28px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 12px 30px rgba(0, 54, 41, 0.12);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .item-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 42px rgba(0, 54, 41, 0.18);
+      }
+
+      .avatar-item {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #d9ffee, #a9f1d6);
+        border: 4px solid #006944;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        box-shadow:
+          inset 0 0 16px rgba(255, 255, 255, 0.8),
+          0 8px 20px rgba(0, 105, 68, 0.2);
+      }
+
+      .item-name {
+        font-size: 21px;
+        font-weight: 800;
+        color: #006944;
+        margin-bottom: 8px;
+      }
+
+      .item-description {
+        min-height: 44px;
+        color: #306554;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+
+      .price {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #c0fee5;
+        color: #003629;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-weight: bold;
+        margin-bottom: 16px;
+      }
+
+      .buy-btn,
+      .equip-btn,
+      .owned-btn {
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 13px 18px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .buy-btn {
+        background: #006944;
+      }
+
+      .buy-btn:hover {
+        background: #005c3b;
+      }
+
+      .equip-btn {
+        background: #306554;
+      }
+
+      .equip-btn:hover {
+        background: #003629;
+      }
+
+      .owned-btn {
+        background: #82b8a4;
+        cursor: default;
+      }
+
+      .equipped-label {
+        margin-top: 10px;
+        color: #006944;
+        font-weight: bold;
+      }
+
+      .empty {
+        background: rgba(255, 255, 255, 0.75);
+        border-radius: 20px;
+        padding: 24px;
+        text-align: center;
+        color: #306554;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <div class="top-bar">
+        <button class="back-btn" onclick="goBack()">← 回主畫面</button>
+
+        <div class="user-panel">
+          <div id="current-avatar" class="avatar-preview">🙂</div>
+          <div id="user-info">載入中...</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <h1>頭像造型商店</h1>
+        <p>使用金幣購買 Avatar Style，讓你的使用者頭像更有特色。</p>
+      </div>
+
+      <h2 class="section-title">可購買頭像造型</h2>
+      <div id="shop-grid" class="shop-grid"></div>
+
+      <h2 class="section-title">我的頭像造型</h2>
+      <div id="owned-grid" class="shop-grid"></div>
+    </div>
+
+    <script>
+      const shopGrid = document.getElementById("shop-grid");
+      const ownedGrid = document.getElementById("owned-grid");
+      const userInfo = document.getElementById("user-info");
+      const currentAvatar = document.getElementById("current-avatar");
+
+      let user = JSON.parse(localStorage.getItem("user"));
+
+      // 測試用 user，之後登入功能完成後可以改成真正登入的 user
+      if (!user) {
+        user = {
+          user_id: 1,
+          user_name: "testuser",
+          coin_balance: 1000,
+        };
+
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      async function refreshUserCoin() {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/shop/user/${user.user_id}/coin`,
+          );
+
+          const result = await response.json();
+
+          if (result.success) {
+            user.user_name = result.user.user_name;
+            user.coin_balance = result.user.coin_balance;
+            localStorage.setItem("user", JSON.stringify(user));
+          }
+
+          userInfo.innerText = `${user.user_name}｜金幣：${user.coin_balance}`;
+        } catch (error) {
+          console.error(error);
+          userInfo.innerText = `${user.user_name}｜金幣：${user.coin_balance}`;
+        }
+      }
+
+      async function loadShopItems() {
+        try {
+          const response = await fetch("http://localhost:3000/shop/avatar-items");
+          const result = await response.json();
+
+          if (!result.success) {
+            alert("載入頭像商品失敗");
+            return;
+          }
+
+          shopGrid.innerHTML = "";
+
+          result.items.forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "item-card";
+
+            card.innerHTML = `
+              <div class="avatar-item">${item.image_url || "🙂"}</div>
+              <div class="item-name">${item.item_name}</div>
+              <div class="item-description">${item.description || ""}</div>
+              <div class="price">🪙 ${item.price}</div>
+              <button class="buy-btn" onclick="purchaseAvatar(${item.item_id})">
+                購買造型
+              </button>
+            `;
+
+            shopGrid.appendChild(card);
+          });
+        } catch (error) {
+          console.error(error);
+          alert("無法連接後端，請確認 backend 是否啟動");
+        }
+      }
+
+      async function loadOwnedAvatars() {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/shop/user/${user.user_id}/avatar-items`,
+          );
+
+          const result = await response.json();
+
+          if (!result.success) {
+            alert("載入我的頭像造型失敗");
+            return;
+          }
+
+          ownedGrid.innerHTML = "";
+          currentAvatar.innerText = "🙂";
+
+          if (result.items.length === 0) {
+            ownedGrid.innerHTML = `
+              <div class="empty">目前尚未擁有任何頭像造型</div>
+            `;
+            return;
+          }
+
+          result.items.forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "item-card";
+
+            if (item.is_equipped) {
+              currentAvatar.innerText = item.image_url || "🙂";
+            }
+
+            card.innerHTML = `
+              <div class="avatar-item">${item.image_url || "🙂"}</div>
+              <div class="item-name">${item.item_name}</div>
+              <div class="item-description">${item.description || ""}</div>
+              ${
+                item.is_equipped
+                  ? `<button class="owned-btn">已裝備</button>
+                     <div class="equipped-label">目前使用中</div>`
+                  : `<button class="equip-btn" onclick="equipAvatar(${item.item_id})">
+                       裝備此造型
+                     </button>`
+              }
+            `;
+
+            ownedGrid.appendChild(card);
+          });
+        } catch (error) {
+          console.error(error);
+          alert("無法載入已擁有頭像");
+        }
+      }
+
+      async function purchaseAvatar(itemId) {
+        try {
+          const response = await fetch("http://localhost:3000/shop/purchase-avatar", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: user.user_id,
+              item_id: itemId,
+            }),
+          });
+
+          const result = await response.json();
+
+          alert(result.message);
+
+          if (result.success) {
+            user.coin_balance = result.remaining_coin;
+            localStorage.setItem("user", JSON.stringify(user));
+
+            await refreshUserCoin();
+            await loadShopItems();
+            await loadOwnedAvatars();
+          }
+        } catch (error) {
+          console.error(error);
+          alert("購買失敗，請確認後端是否啟動");
+        }
+      }
+
+      async function equipAvatar(itemId) {
+        try {
+          const response = await fetch("http://localhost:3000/shop/equip-avatar", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: user.user_id,
+              item_id: itemId,
+            }),
+          });
+
+          const result = await response.json();
+
+          alert(result.message);
+
+          if (result.success) {
+            await loadOwnedAvatars();
+          }
+        } catch (error) {
+          console.error(error);
+          alert("裝備失敗，請確認後端是否啟動");
+        }
+      }
+
+      function goBack() {
+        window.location.href = "interface.html";
+      }
+
+      async function init() {
+        await refreshUserCoin();
+        await loadShopItems();
+        await loadOwnedAvatars();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
