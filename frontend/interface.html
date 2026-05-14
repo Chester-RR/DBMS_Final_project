@@ -256,7 +256,7 @@
           id="user-box"
         >
           <span class="material-symbols-outlined text-xl">account_circle</span>
-          <span>用戶名：username</span>
+          <span id="user-name-text">用戶名：username</span>
         </button>
       </div>
       <!-- Floating Glass Accents -->
@@ -291,37 +291,91 @@
           >
         </button>
       </div>
+
+      <!-- Template Selector Panel -->
+      <section
+        id="template-panel"
+        class="absolute right-8 bottom-8 z-30 w-72 rounded-3xl border border-outline-variant/40 bg-surface-container-lowest/80 backdrop-blur-xl shadow-2xl p-4 text-left"
+      >
+        <div class="mb-3">
+          <h3 class="text-primary font-extrabold text-lg">選擇模板</h3>
+          <p class="text-on-surface-variant text-xs mt-1">
+            選好模板後，按中間的互動按鈕產生亂語
+          </p>
+        </div>
+
+        <div
+          id="selected-template-label"
+          class="mb-3 rounded-xl bg-surface-container-high/60 px-3 py-2 text-xs font-bold text-primary"
+        >
+          尚未選擇模板
+        </div>
+
+        <div
+          id="template-list"
+          class="custom-scrollbar max-h-56 overflow-y-auto pr-2 flex flex-col gap-3"
+        >
+          <p class="text-sm text-on-surface-variant">模板載入中...</p>
+        </div>
+      </section>
     </main>
+
     <script>
+      const API_BASE_URL = "http://localhost:3000";
+
       const btn = document.getElementById("interactive-btn");
       const container = document.getElementById("string-carousel");
       const scrollContainer = document.getElementById("scroll-container");
-      const sequence = ["a", "b", "c"];
-      let currentIndex = 0;
 
-      btn.addEventListener("click", () => {
-        const char = sequence[currentIndex];
-        currentIndex = (currentIndex + 1) % sequence.length;
+      const templateList = document.getElementById("template-list");
+      const selectedTemplateLabel = document.getElementById(
+        "selected-template-label",
+      );
+
+      let selectedTemplateId = null;
+
+      const savedUserName = localStorage.getItem("user_name");
+      const userNameText = document.getElementById("user-name-text");
+
+      if (savedUserName && userNameText) {
+        userNameText.textContent = `用戶名：${savedUserName}`;
+      }
+
+      function renderGibberishCard(gibberish) {
+        const content =
+          typeof gibberish === "string" ? gibberish : gibberish.content;
+
+        const gibberishId =
+          typeof gibberish === "string" ? null : gibberish.gibberish_id;
 
         const wrapper = document.createElement("div");
         wrapper.className =
           "string-item pointer-events-auto flex items-center justify-center gap-3 string-hover-effect";
 
+        if (gibberishId) {
+          wrapper.dataset.gibberishId = gibberishId;
+        }
+
         wrapper.innerHTML = `
-            <div class="bg-white px-8 py-4 rounded-2xl shadow-lg border border-white/50 flex items-center justify-center min-w-[80px]">
-                <span class="text-3xl font-extrabold text-primary">${char}</span>
-            </div>
-            <button class="pin-btn bg-secondary w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg hover:bg-primary transition-colors duration-200">
-                <span class="material-symbols-outlined text-2xl">push_pin</span>
-            </button>
-        `;
+      <div class="bg-white px-8 py-4 rounded-2xl shadow-lg border border-white/50 flex items-center justify-center min-w-[80px]">
+        <span class="text-3xl font-extrabold text-primary">${content}</span>
+      </div>
+
+      <button class="pin-btn bg-secondary w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg hover:bg-primary transition-colors duration-200">
+        <span class="material-symbols-outlined text-2xl">push_pin</span>
+      </button>
+    `;
 
         const pinBtn = wrapper.querySelector(".pin-btn");
+
         pinBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+
           pinBtn.classList.remove("animate-pop-up");
           void pinBtn.offsetWidth;
           pinBtn.classList.add("animate-pop-up");
+
+          console.log("pin gibberish_id:", gibberishId);
         });
 
         container.appendChild(wrapper);
@@ -332,16 +386,169 @@
             behavior: "smooth",
           });
         });
+      }
+
+      async function loadMyGibberishes() {
+        const userId = localStorage.getItem("user_id");
+
+        if (!userId) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/gibberish/my?user_id=${Number(userId)}`,
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to load my gibberishes");
+          }
+
+          const gibberishes = await response.json();
+
+          container.innerHTML = "";
+
+          gibberishes.forEach((gibberish) => {
+            renderGibberishCard(gibberish);
+          });
+        } catch (error) {
+          console.error("載入我的亂語失敗:", error);
+        }
+      }
+
+      async function loadTemplates() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/gibberish/templates`);
+
+          if (!response.ok) {
+            throw new Error("Failed to load templates");
+          }
+
+          const data = await response.json();
+
+          const templates = Array.isArray(data) ? data : data.templates;
+
+          if (!Array.isArray(templates)) {
+            throw new Error("Template data format is wrong");
+          }
+
+          renderTemplates(templates);
+        } catch (error) {
+          console.error("載入模板失敗:", error);
+
+          templateList.innerHTML = `
+        <p class="text-sm text-red-700 font-bold">
+          模板載入失敗，請確認後端 GET /gibberish/templates 有開啟
+        </p>
+      `;
+        }
+      }
+
+      function renderTemplates(templates) {
+        templateList.innerHTML = "";
+
+        const baseClass =
+          "template-card w-full text-left rounded-2xl border px-4 py-3 transition-all duration-200 cursor-pointer";
+
+        const normalClass =
+          baseClass +
+          " bg-white/70 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/70";
+
+        const activeClass =
+          baseClass + " bg-primary border-primary text-white shadow-lg";
+
+        templates.forEach((template, index) => {
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = normalClass;
+
+          item.innerHTML = `
+        <div class="font-extrabold text-sm">
+          ${template.template_name}
+        </div>
+        <div class="text-xs opacity-80 mt-1">
+          ${template.structure}
+        </div>
+      `;
+
+          item.addEventListener("click", () => {
+            selectedTemplateId = template.template_id;
+
+            document.querySelectorAll(".template-card").forEach((card) => {
+              card.className = normalClass;
+            });
+
+            item.className = activeClass;
+
+            selectedTemplateLabel.textContent = `已選：${template.template_name}`;
+
+            console.log("目前選到的 template_id:", selectedTemplateId);
+          });
+
+          templateList.appendChild(item);
+
+          if (index === 0) {
+            item.click();
+          }
+        });
+      }
+
+      btn.addEventListener("click", async () => {
+        if (!selectedTemplateId) {
+          alert("請先選擇一個模板");
+          return;
+        }
+
+        try {
+          const userId = localStorage.getItem("user_id");
+
+          if (!userId) {
+            alert("請先登入");
+            window.location.href = "./login.html";
+            return;
+          }
+
+          const response = await fetch(`${API_BASE_URL}/gibberish/generate`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              template_id: selectedTemplateId,
+              user_id: Number(userId),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to generate gibberish");
+          }
+
+          const data = await response.json();
+
+          console.log("後端回傳資料:", data);
+
+          const content =
+            data.content || data.gibberish?.content || data.result?.content;
+
+          if (!content) {
+            throw new Error("後端沒有回傳 content");
+          }
+
+          renderGibberishCard(data);
+        } catch (error) {
+          console.error("產生亂語失敗:", error);
+          alert("產生亂語失敗，請確認後端 POST /gibberish/generate 是否正常");
+        }
       });
 
       const userBox = document.getElementById("user-box");
+
       userBox.addEventListener("click", () => {
         userBox.classList.remove("animate-pop-up");
         void userBox.offsetWidth;
         userBox.classList.add("animate-pop-up");
       });
 
-      // Sidebar Logic
       const menuToggle = document.getElementById("menu-toggle");
       const sidebar = document.getElementById("sidebar");
       const sidebarOverlay = document.getElementById("sidebar-overlay");
@@ -349,6 +556,7 @@
 
       const toggleSidebar = () => {
         const isOpen = !sidebar.classList.contains("closed");
+
         if (isOpen) {
           sidebar.classList.add("closed");
           sidebarOverlay.classList.add("closed");
@@ -356,7 +564,6 @@
           sidebar.classList.remove("closed");
           sidebarOverlay.classList.remove("closed");
 
-          // Pop up animation for the hamburger icon when clicked
           menuToggle.classList.remove("animate-pop-up");
           void menuToggle.offsetWidth;
           menuToggle.classList.add("animate-pop-up");
@@ -367,14 +574,16 @@
       closeSidebar.addEventListener("click", toggleSidebar);
       sidebarOverlay.addEventListener("click", toggleSidebar);
 
-      // Sidebar button effects
       const sidebarBtns = document.querySelectorAll(".sidebar-btn");
+
       sidebarBtns.forEach((sbBtn) => {
         sbBtn.addEventListener("click", () => {
-          // They already have btn-spring-active class in HTML,
-          // so CSS :active handles the shrink/white effect.
+          // Sidebar button click effect is handled by CSS
         });
       });
+
+      loadTemplates();
+      loadMyGibberishes();
     </script>
   </body>
 </html>
