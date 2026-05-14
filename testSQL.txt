@@ -41,7 +41,12 @@ ORDER BY user_id;
 
 
 ---------------啟動用的放下面------------------------------------------------------
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9001"
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9002"
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9003"
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9004"
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9005"
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/level/9006"
 
 
 測試:
