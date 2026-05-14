@@ -1,0 +1,205 @@
+<!doctype html>
+<html class="light" lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>通知中心 | While The AI Thinks</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              "primary-dim": "#005c3b",
+              surface: "#d9ffee",
+              "surface-container-low": "#c0fee5",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-surface-variant": "#306554",
+              outline: "#4c816e",
+              "outline-variant": "#82b8a4",
+            },
+            fontFamily: { body: ["Inter"] },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+      
+      /* Spring Animation */
+      .btn-spring-active:active { transform: scale(0.95); transition: none; }
+      .btn-spring-return { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+      /* Mesh Background */
+      .atrium-mesh {
+        background-color: #d9ffee;
+        background-image:
+          radial-gradient(at 0% 0%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 100% 0%, #7efdbe 0px, transparent 50%),
+          radial-gradient(at 100% 100%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+      }
+
+      /* Custom Scrollbar */
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4c816e; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #006944; }
+
+      .notification-card {
+        transition: all 0.3s ease;
+      }
+      .notification-card:hover {
+        transform: translateY(-2px);
+      }
+      
+      /* 進入動畫 */
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-slide-in { animation: slideIn 0.4s ease forwards; }
+    </style>
+  </head>
+
+  <body class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col items-center py-10 px-4 relative">
+    
+    <div class="w-full max-w-2xl flex items-center justify-between mb-8 z-10">
+      <button onclick="history.back()" class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant w-12 h-12 rounded-xl flex items-center justify-center shadow-sm hover:bg-white transition-all text-on-surface-variant btn-spring-return btn-spring-active">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h1 class="text-3xl font-extrabold text-primary flex items-center gap-2">
+        <span class="material-symbols-outlined text-4xl">notifications</span>
+        通知中心
+      </h1>
+      <button id="mark-all-read-btn" class="text-sm font-bold text-primary bg-white/50 px-4 py-2 rounded-lg border border-primary/20 hover:bg-white shadow-sm transition-all btn-spring-return btn-spring-active">
+        全部標記為已讀
+      </button>
+    </div>
+
+    <div class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-surface-container-low/50 rounded-full blur-[80px] -z-10"></div>
+
+    <main class="w-full max-w-2xl bg-surface-container-lowest/70 backdrop-blur-xl border border-outline-variant/30 rounded-3xl shadow-xl overflow-hidden flex flex-col h-[70vh]">
+      
+      <div id="notification-container" class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4">
+        <div id="loading-state" class="text-center text-outline-variant py-10 flex flex-col items-center animate-pulse">
+            <span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span>
+            <p>正在讀取天機...</p>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      const API_BASE_URL = "http://localhost:3000/api/notifications"; // 配合後端路由
+      const container = document.getElementById("notification-container");
+      const markAllBtn = document.getElementById("mark-all-read-btn");
+
+      // 根據通知類型取得對應的 Icon 與顏色
+      function getIconConfig(type) {
+        switch(type) {
+          case 'SYSTEM': return { icon: 'info', color: 'text-blue-600', bg: 'bg-blue-100' };
+          case 'LIKE': return { icon: 'thumb_up', color: 'text-pink-600', bg: 'bg-pink-100' };
+          case 'ACHIEVEMENT': return { icon: 'emoji_events', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+          default: return { icon: 'notifications', color: 'text-primary', bg: 'bg-surface-container-high' };
+        }
+      }
+
+      // 渲染單一通知卡片
+      function createNotificationCard(notification, index) {
+        const config = getIconConfig(notification.type);
+        const isUnread = !notification.isRead;
+        
+        return `
+          <div class="notification-card animate-slide-in relative group cursor-pointer bg-white ${isUnread ? 'border-primary/40 shadow-md' : 'border-outline-variant/20 opacity-80'} border rounded-2xl p-4 flex gap-4 items-start" 
+               style="animation-delay: ${index * 0.1}s"
+               onclick="markAsRead('${notification.id}')">
+            
+            ${isUnread ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,105,68,0.6)]"></div>' : ''}
+            
+            <div class="${config.bg} ${config.color} w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner">
+              <span class="material-symbols-outlined">${config.icon}</span>
+            </div>
+            
+            <div class="flex-1">
+              <div class="flex justify-between items-start mb-1">
+                <h3 class="font-bold text-on-surface ${isUnread ? 'text-lg' : 'text-base'}">${notification.title}</h3>
+                <span class="text-xs text-outline font-medium whitespace-nowrap ml-2">${notification.createdAt}</span>
+              </div>
+              <p class="text-sm text-on-surface-variant leading-relaxed">
+                ${notification.content}
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      // 取得資料
+      async function fetchNotifications() {
+        try {
+          const response = await fetch(API_BASE_URL);
+          const result = await response.json();
+          
+          if(result.success) {
+            renderNotifications(result.data);
+          }
+        } catch (error) {
+          console.error("Fetch Error:", error);
+          container.innerHTML = `<div class="text-center text-red-500 py-10">無法連線至伺服器</div>`;
+        }
+      }
+
+      // 渲染列表
+      function renderNotifications(data) {
+        if(data.length === 0) {
+          container.innerHTML = `
+            <div class="text-center text-outline-variant py-10 flex flex-col items-center">
+              <span class="material-symbols-outlined text-5xl mb-4 opacity-50">notifications_paused</span>
+              <p>目前沒有任何通知</p>
+            </div>`;
+          return;
+        }
+        
+        container.innerHTML = data.map((n, i) => createNotificationCard(n, i)).join('');
+      }
+
+      // 標記單一已讀
+      async function markAsRead(id) {
+        try {
+          await fetch(`${API_BASE_URL}/${id}/read`, { method: 'PATCH' });
+          fetchNotifications(); // 重新拉取整理畫面 (實務上可以直接改 DOM 效能更好)
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      // 全部標記已讀
+      markAllBtn.addEventListener("click", async () => {
+        try {
+          // 加上特效按鈕回饋
+          markAllBtn.classList.remove("animate-pop-up");
+          void markAllBtn.offsetWidth;
+          markAllBtn.classList.add("animate-pop-up");
+          markAllBtn.innerText = "處理中...";
+
+          await fetch(`${API_BASE_URL}/read-all`, { method: 'PATCH' });
+          await fetchNotifications();
+          
+          markAllBtn.innerText = "全部標記為已讀";
+        } catch (error) {
+          console.error(error);
+          markAllBtn.innerText = "發生錯誤";
+        }
+      });
+
+      // 初始化
+      fetchNotifications();
+    </script>
+  </body>
+</html>

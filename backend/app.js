@@ -1,43 +1,36 @@
-//這是主要啟動後端的code
-// = 後端主入口
-// = 設定 middleware
-// = 掛載各個功能檔案
-// = 啟動 server
-
+// app.js
 import express from "express";
 import mysqlConnectionPool from "./lib/mysql.js";
 
-import loginRoutes from "./features/login.js"; //之後開發好的功能就import
+import loginRoutes from "./features/login.js"; 
+// === 新增：匯入通知功能路由 ===
+import notificationRoutes from "./features/notification.js"; 
 
 const app = express();
 
-// first middleware 把前端送來的 JSON 資料解析成 req.body
 app.use(express.json());
 
-// second middleware  允許前端網站向你的後端發送 request
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // 設定前端網站的請求  事實上不會對所有的網站都開放  之後要改
+  res.setHeader("Access-Control-Allow-Origin", "*"); 
   res.setHeader("Access-Control-Allow-Headers", "*");
+  // 如果有用到 PUT, DELETE 方法，記得加上 Allow-Methods
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE");
   next();
 });
 
-app.use("/user", loginRoutes); ////用到功能的middleware
+app.use("/user", loginRoutes); 
+// === 新增：掛載通知的 API ===
+app.use("/api/notifications", notificationRoutes);
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// request logger middleware：用來測試每次 request 有沒有進入後端
 app.use((req, res, next) => {
-  console.log(req); // 印出前端送進來的 request，方便除錯
-  next(); // middleware 處理完後，繼續往下一個 middleware 或 API route
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`); 
+  next(); 
 });
 
-// 測試 API：用來確認 server 是否正常運作
 app.get("/ping", (req, res) => {
-  // 如果成功進入 /ping，就回傳 Pong 給瀏覽器或前端
   return res.send("<h1>Pong!</h1>");
 });
 
-// 啟動後端 server，監聽 3000 port
 app.listen(3000, () => {
   console.log("Server starts at port 3000");
 });
