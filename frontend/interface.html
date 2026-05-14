@@ -161,6 +161,38 @@
         opacity: 0;
         pointer-events: none;
       }
+
+      /* 使用者卡片外觀區：由後端 /level API 回傳的 currentFrame 動態控制。
+         --frame-border / --frame-glow / --frame-bg 會在 applyUserProfile() 裡被 setProperty 更新，
+         所以資料庫 AvatarFrame 的顏色與 CSS 背景可以直接影響右上角使用者卡片。 */
+      #user-box {
+        --frame-border: #82b8a4;
+        --frame-glow: rgba(0, 105, 68, 0.18);
+        --frame-bg: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82));
+        background: var(--frame-bg);
+        border-color: var(--frame-border);
+        box-shadow: 0 10px 28px var(--frame-glow);
+      }
+
+      #user-box::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border: 2px solid var(--frame-border);
+        border-radius: 1.1rem;
+        opacity: 0.55;
+        pointer-events: none;
+      }
+
+      #avatar-frame {
+        border-color: var(--frame-border);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55), 0 0 18px var(--frame-glow);
+      }
+
+      #user-title {
+        color: var(--frame-border);
+        text-shadow: 0 1px 8px rgba(255,255,255,0.75);
+      }
     </style>
   </head>
 
@@ -252,11 +284,22 @@
       <!-- Top-Right User Box -->
       <div class="absolute top-8 right-8 z-30">
         <button
-          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant font-medium text-sm group"
+          class="relative min-w-[230px] border px-4 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 text-on-surface-variant group"
           id="user-box"
         >
-          <span class="material-symbols-outlined text-xl">account_circle</span>
-          <span id="user-name-text">用戶名：username</span>
+          <span
+            class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
+            id="avatar-frame"
+          >
+            <span class="material-symbols-outlined text-3xl">account_circle</span>
+          </span>
+          <span class="flex flex-col items-start leading-tight text-left">
+            <span class="flex items-center gap-2">
+              <span class="font-extrabold text-base text-on-surface" id="user-name">username</span>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary" id="user-level">Lv.1</span>
+            </span>
+            <span class="text-xs font-bold tracking-wide" id="user-title">無名生成者</span>
+          </span>
         </button>
       </div>
       <!-- Floating Glass Accents -->
@@ -321,11 +364,65 @@
     </main>
 
     <script>
+
       const API_BASE_URL = "http://localhost:3000";
 
       const btn = document.getElementById("interactive-btn");
       const container = document.getElementById("string-carousel");
       const scrollContainer = document.getElementById("scroll-container");
+
+      
+      
+
+      // 將後端 /level/:userId 回傳的 profile 套到右上角使用者卡片。
+      // 這裡只負責前端呈現：名稱、等級、稱號文字，以及頭像框的 CSS 變數。
+      function applyUserProfile(profile) {
+        const userName = document.getElementById("user-name");
+        const userLevel = document.getElementById("user-level");
+        const userTitle = document.getElementById("user-title");
+        const frame = profile.currentFrame;
+
+        userName.textContent = profile.user.name || "username";
+        userLevel.textContent = `Lv.${profile.user.level}`;
+        userTitle.textContent = profile.currentTitle.title_name || "無名生成者";
+
+        userBox.style.setProperty("--frame-border", frame.border_color || "#82b8a4");
+        userBox.style.setProperty("--frame-glow", frame.glow_color || "rgba(0, 105, 68, 0.18)");
+        userBox.style.setProperty("--frame-bg", frame.background_css || "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82))");
+      }
+
+      // 頁面載入時呼叫：讀取目前使用者的等級資料，並讓後端順便同步稱號與頭像框。
+      async function loadUserProfile() {
+        try {
+          const response = await fetch(`http://localhost:3000/level/${currentUserId}`);
+          const data = await response.json();
+
+          if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Level profile is not ready yet:", error);
+        }
+      }
+
+      // 每成功生成一次內容後呼叫：通知後端 generation_count +1，
+      // 後端會重新計算 level、發放符合條件的獎勵，最後回傳最新 profile。
+      async function recordGeneration() {
+        try {
+          const response = await fetch(`http://localhost:3000/level/${currentUserId}/generation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Generation count was not recorded:", error);
+        }
+      }
+
 
       const templateList = document.getElementById("template-list");
       const selectedTemplateLabel = document.getElementById(
@@ -379,6 +476,9 @@
         });
 
         container.appendChild(wrapper);
+
+        // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
+        recordGeneration();
 
         requestAnimationFrame(() => {
           scrollContainer.scrollTo({
@@ -548,6 +648,12 @@
         void userBox.offsetWidth;
         userBox.classList.add("animate-pop-up");
       });
+
+
+      // 初次進入頁面時先抓一次 profile，讓右上角使用者卡片不是停在預設值。
+      loadUserProfile();
+
+      // Sidebar Logic
 
       const menuToggle = document.getElementById("menu-toggle");
       const sidebar = document.getElementById("sidebar");

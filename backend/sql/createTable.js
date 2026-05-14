@@ -13,6 +13,7 @@ try {
     admin BOOLEAN NOT NULL DEFAULT FALSE,
     level INT NOT NULL DEFAULT 1,
     coin_balance INT NOT NULL DEFAULT 0,
+    
 
     CONSTRAINT chk_user_admin
       CHECK (admin IN (0, 1)),

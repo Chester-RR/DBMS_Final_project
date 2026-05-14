@@ -8,7 +8,11 @@ import express from "express";
 import mysqlConnectionPool from "./lib/mysql.js";
 
 import loginRoutes from "./features/login.js"; //之後開發好的功能就import
+
 import gibberishRoutes from "./features/gibberish.js";
+
+import levelRoutes from "./features/level.js"; // level / title / avatar frame routes
+
 const app = express();
 
 // first middleware 把前端送來的 JSON 資料解析成 req.body
@@ -25,15 +29,19 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); // 設定前端網站的請求  事實上不會對所有的網站都開放  之後要改
   res.setHeader("Access-Control-Allow-Headers", "*");
+
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS",
   );
+
   next();
 });
 
 app.use("/user", loginRoutes); ////用到功能的middleware
 app.use("/gibberish", gibberishRoutes);
+app.use("/level", levelRoutes); //// 等級、稱號、頭像框功能
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // 啟動後端 server，監聽 3000 port
