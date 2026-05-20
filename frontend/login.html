@@ -1,16 +1,12 @@
 <!doctype html>
-
-<html class="light" lang="en">
+<html class="light" lang="zh-TW">
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Login</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
     <link
@@ -47,143 +43,125 @@
       };
     </script>
     <style>
+      body { font-family: "Inter", sans-serif; }
       .material-symbols-outlined {
-        font-variation-settings:
-          "FILL" 0,
-          "wght" 400,
-          "GRAD" 0,
-          "opsz" 24;
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
       }
-
-      .hero-gradient {
-        background: linear-gradient(180deg, #00649a 0%, #005787 100%);
-      }
-
       .playful {
         font-family: "Comic Neue", cursive;
         display: inline-block;
         transform: rotate(-3deg) translateY(-2px);
       }
+      #eye-icon {
+        transition: opacity 0.15s ease-in-out;
+      }
+      .btn-spring-active:active {
+        transform: scale(0.95);
+        background-color: #005c3b !important;
+        transition: none;
+      }
+      .btn-spring-return {
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes pop {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.08); }
+        100% { transform: scale(1.03); }
+      }
+      .clicked { animation: pop 0.25s ease-out; }
     </style>
   </head>
 
-  <body
-    class="bg-surface font-body text-on-surface min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container"
-  >
-    <!-- Main Content Canvas -->
-    <main
-      class="flex-grow flex items-center justify-center bg-surface-container-low px-4 sm:px-6 lg:px-8"
-    >
-      <!-- The Hero Card (Nested Layering) -->
-      <div
-        class="w-full max-auto max-w-[480px] bg-surface-container-lowest rounded-xl p-[4rem_3rem_5rem_3rem] shadow-[0px_12px_32px_rgba(44,52,55,0.06)]"
-      >
-        <!-- Headline Section -->
-        <div class="mb-10 text-center">
-          <h1
-            class="font-headline text-[2rem] font-extrabold text-on-surface tracking-[-0.02em] mb-2 leading-tight"
-          >
+  <body class="bg-surface text-on-surface min-h-screen flex flex-col selection:bg-primary selection:text-white">
+    <main class="flex-grow flex items-center justify-center bg-surface-container-low px-4 sm:px-6 lg:px-8">
+      <div class="w-full max-w-[480px] bg-surface-container-lowest rounded-xl p-8 sm:p-12 shadow-[0px_12px_32px_rgba(44,52,55,0.06)]">
+        <div class="mb-8 text-center">
+          <h1 class="font-headline text-[2rem] font-extrabold text-on-surface mb-2 leading-tight">
             While AI thinks
           </h1>
-          <p class="font-body text-sm text-on-surface-variant font-medium">
+          <p class="text-sm text-on-surface-variant font-medium">
             <span class="playful"><strong>Mess around with words</strong></span>
           </p>
         </div>
-        <!-- Form Content -->
-        <form class="space-y-6" id="login-form">
-          <!-- Sign Up Username Field -->
-          <div class="space-y-2 hidden" id="signup-username-field">
-            <label
-              class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
-              for="user-name"
-            >
-              Username
+
+        <div class="grid grid-cols-2 gap-2 rounded-full bg-gray-100 p-1 mb-8">
+          <button id="login-tab" type="button" class="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white">
+            登入
+          </button>
+          <button id="signup-tab" type="button" class="rounded-full px-4 py-2 text-sm font-bold text-on-surface-variant">
+            註冊
+          </button>
+        </div>
+
+        <form id="auth-form" class="space-y-6">
+          <div id="name-field" class="space-y-2 hidden">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80" for="name">
+              使用者名稱
             </label>
-            <div class="relative">
-              <input
-                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
-                id="user-name"
-                type="text"
-              />
-            </div>
+            <input
+              class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none"
+              id="name"
+              name="name"
+              type="text"
+              autocomplete="username"
+            />
           </div>
-          <!-- Username/Email Field -->
+
           <div class="space-y-2">
-            <label
-              class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
-              for="email"
-            >
+            <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80" for="email">
               Email
             </label>
-            <div class="relative">
-              <input
-                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
-                id="email"
-                type="email"
-                required
-              />
-            </div>
+            <input
+              required
+              class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none"
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+            />
           </div>
-          <!-- Password Field -->
+
           <div class="space-y-2">
-            <div class="flex justify-between items-center">
-              <label
-                class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
-                for="password"
-              >
-                Password
-              </label>
-              <a
-                class="text-xs font-semibold text-primary hover:text-primary-dim transition-colors"
-                href="#"
-              >
-                Forgot Password?
-              </a>
-            </div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80" for="password">
+              Password
+            </label>
             <div class="relative group">
               <input
-                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
+                required
+                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 pr-14 text-on-surface text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none"
                 id="password"
+                name="password"
                 placeholder="••••••••"
                 type="password"
+                autocomplete="current-password"
               />
               <button
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50 hover:opacity-100 transition-opacity"
                 id="password-toggle"
                 type="button"
               >
-                <span
-                  class="material-symbols-outlined"
-                  data-icon="visibility"
-                  id="eye-icon"
-                  >visibility</span
-                >
+                <span class="material-symbols-outlined" id="eye-icon">visibility</span>
               </button>
             </div>
           </div>
 
-          <!-- Action Button -->
           <div class="pt-4">
             <button
-              id="login-btn"
-              class="w-full bg-gray-400 text-white font-headline text-base font-bold py-4 rounded-full btn-spring-return btn-spring-active"
+              id="submit-btn"
+              class="w-full bg-primary text-white font-headline text-base font-bold py-4 rounded-full btn-spring-return btn-spring-active disabled:opacity-60"
               type="submit"
             >
               Login
             </button>
           </div>
         </form>
-        <!-- Bottom Registration Link -->
+
         <div class="mt-8 text-center">
-          <p class="text-sm font-body text-on-surface-variant">
-            Don't have an account?
-            <a
-              class="font-bold text-primary hover:text-primary-dim underline decoration-primary/30 underline-offset-4 transition-all"
-              href="#"
-              id="signup-toggle"
-            >
+          <p class="text-sm text-on-surface-variant">
+            <span id="mode-text">Don't have an account?</span>
+            <button id="mode-toggle" type="button" class="font-bold text-primary hover:text-primary-dim underline decoration-primary/30 underline-offset-4 transition-all">
               Sign Up
-            </a>
+            </button>
           </p>
         </div>
       </div>
@@ -191,149 +169,93 @@
 
     <script>
       const API_BASE_URL = "http://localhost:3000";
-
       const passwordInput = document.getElementById("password");
       const toggleBtn = document.getElementById("password-toggle");
       const eyeIcon = document.getElementById("eye-icon");
-      const loginBtn = document.getElementById("login-btn");
-      const loginForm = document.getElementById("login-form");
-      const emailInput = document.getElementById("email");
+      const authForm = document.getElementById("auth-form");
+      const submitBtn = document.getElementById("submit-btn");
+      const loginTab = document.getElementById("login-tab");
+      const signupTab = document.getElementById("signup-tab");
+      const nameField = document.getElementById("name-field");
+      const nameInput = document.getElementById("name");
+      const modeText = document.getElementById("mode-text");
+      const modeToggle = document.getElementById("mode-toggle");
 
-      const signupToggle = document.getElementById("signup-toggle");
-      const signupUsernameField = document.getElementById(
-        "signup-username-field",
-      );
-      const userNameInput = document.getElementById("user-name");
+      let mode = "login";
 
-      let isSignupMode = false;
+      function setMode(nextMode) {
+        mode = nextMode;
+        const isSignup = mode === "signup";
+
+        nameField.classList.toggle("hidden", !isSignup);
+        nameInput.required = isSignup;
+        passwordInput.autocomplete = isSignup ? "new-password" : "current-password";
+        submitBtn.textContent = isSignup ? "Sign Up" : "Login";
+        modeText.textContent = isSignup ? "Already have an account?" : "Don't have an account?";
+        modeToggle.textContent = isSignup ? "Login" : "Sign Up";
+
+        loginTab.className = isSignup
+          ? "rounded-full px-4 py-2 text-sm font-bold text-on-surface-variant"
+          : "rounded-full bg-primary px-4 py-2 text-sm font-bold text-white";
+        signupTab.className = isSignup
+          ? "rounded-full bg-primary px-4 py-2 text-sm font-bold text-white"
+          : "rounded-full px-4 py-2 text-sm font-bold text-on-surface-variant";
+      }
 
       toggleBtn.addEventListener("click", () => {
         const isPassword = passwordInput.getAttribute("type") === "password";
-
         passwordInput.setAttribute("type", isPassword ? "text" : "password");
-
         eyeIcon.style.opacity = "0";
-
         setTimeout(() => {
           eyeIcon.textContent = isPassword ? "visibility_off" : "visibility";
           eyeIcon.style.opacity = "1";
         }, 100);
       });
 
-      signupToggle.addEventListener("click", (e) => {
-        e.preventDefault();
+      loginTab.addEventListener("click", () => setMode("login"));
+      signupTab.addEventListener("click", () => setMode("signup"));
+      modeToggle.addEventListener("click", () => setMode(mode === "login" ? "signup" : "login"));
 
-        isSignupMode = !isSignupMode;
+      authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-        if (isSignupMode) {
-          signupUsernameField.classList.remove("hidden");
-          loginBtn.textContent = "Sign Up";
-          signupToggle.textContent = "Login";
-        } else {
-          signupUsernameField.classList.add("hidden");
-          loginBtn.textContent = "Login";
-          signupToggle.textContent = "Sign Up";
-        }
-      });
+        submitBtn.classList.add("clicked");
+        submitBtn.disabled = true;
+        setTimeout(() => submitBtn.classList.remove("clicked"), 250);
 
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        const userName = userNameInput.value.trim();
-
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailPattern.test(email)) {
-          alert("請輸入正確的 email 格式，例如：test@example.com");
-          return;
-        }
-
-        if (isSignupMode && !userName) {
-          alert("請輸入 username");
-          return;
-        }
-
-        loginBtn.classList.add("active");
-        loginBtn.disabled = true;
-        loginBtn.textContent = isSignupMode ? "Signing up..." : "Logging in...";
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const name = document.getElementById("name").value.trim();
+        const url = mode === "signup" ? `${API_BASE_URL}/user/signup` : `${API_BASE_URL}/user/login`;
+        const body = mode === "signup" ? { name, email, password } : { email, password };
 
         try {
-          const url = isSignupMode
-            ? `${API_BASE_URL}/user/signup`
-            : `${API_BASE_URL}/user/login`;
-
-          const body = isSignupMode
-            ? {
-                user_name: userName,
-                email: email,
-                password: password,
-              }
-            : {
-                email: email,
-                password: password,
-              };
-
           const response = await fetch(url, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
 
           const data = await response.json();
 
-          console.log("User API 回傳資料:", data);
-
           if (!response.ok || !data.success) {
-            alert(data.message || "操作失敗");
+            throw new Error(data.message || "操作失敗");
+          }
+
+          if (mode === "signup") {
+            alert("註冊成功，請用剛剛的帳號登入");
+            setMode("login");
             return;
           }
 
-          localStorage.setItem("user_id", data.user.user_id);
-          localStorage.setItem("user_name", data.user.user_name);
-          localStorage.setItem("email", data.user.email);
-
-          window.location.href = "./interface.html";
+          localStorage.setItem("currentUser", JSON.stringify(data.user));
+          window.location.href = "interface.html";
         } catch (error) {
-          console.error("User API 錯誤:", error);
-          alert("操作失敗，請確認後端 /user/login 或 /user/signup 是否正常");
+          alert(error.message || "後端沒有回應，請確認伺服器已啟動");
         } finally {
-          loginBtn.disabled = false;
-          loginBtn.textContent = isSignupMode ? "Sign Up" : "Login";
+          submitBtn.disabled = false;
         }
       });
     </script>
-    <style>
-      #eye-icon {
-        transition: opacity 0.15s ease-in-out;
-      }
-
-      /* press down */
-      .btn-spring-active:active {
-        transform: scale(0.95);
-        background-color: #005c3b; /* 深綠 */
-        transition: none;
-      }
-
-      /* pop up  */
-      .btn-spring-return {
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-
-      @keyframes pop {
-        0% {
-          transform: scale(1);
-        }
-        40% {
-          transform: scale(1.08);
-        }
-        100% {
-          transform: scale(1.03);
-        }
-      }
-    </style>
   </body>
 </html>
