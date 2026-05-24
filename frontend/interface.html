@@ -228,7 +228,7 @@
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>論壇</span>
       </button>
-      <button
+      <button id="shop-sidebar-btn"
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>商店</span>
       </button>
@@ -360,6 +360,27 @@
       }
     }
 
+    function applyEquippedAvatar(avatar) {
+      const avatarIcon = document.querySelector("#avatar-frame .material-symbols-outlined");
+      const iconName = avatar?.image_url || localStorage.getItem("avatar_icon") || "account_circle";
+      avatarIcon.textContent = iconName;
+      localStorage.setItem("avatar_icon", iconName);
+    }
+
+    async function loadEquippedAvatar() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/shop/${currentUserId}/equipped-avatar`);
+        const data = await response.json();
+
+        if (data.success) {
+          applyEquippedAvatar(data.avatar);
+        }
+      } catch (error) {
+        console.warn("Equipped avatar is not ready yet:", error);
+        applyEquippedAvatar(null);
+      }
+    }
+
     // 每成功生成一次內容後呼叫：通知後端 generation_count +1，
     // 後端會重新計算 level、發放符合條件的獎勵，最後回傳最新 profile。
     async function recordGeneration() {
@@ -393,7 +414,7 @@
       userNameText.textContent = `用戶名：${savedUserName}`;
     }
 
-    function renderGibberishCard(gibberish) {
+    function renderGibberishCard(gibberish, options = {}) {
       const content =
         typeof gibberish === "string" ? gibberish : gibberish.content;
 
@@ -433,7 +454,9 @@
       container.appendChild(wrapper);
 
       // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
-      recordGeneration();
+      if (options.recordGeneration !== false) {
+        recordGeneration();
+      }
 
       requestAnimationFrame(() => {
         scrollContainer.scrollTo({
@@ -464,7 +487,7 @@
         container.innerHTML = "";
 
         gibberishes.forEach((gibberish) => {
-          renderGibberishCard(gibberish);
+          renderGibberishCard(gibberish, { recordGeneration: false });
         });
       } catch (error) {
         console.error("載入我的亂語失敗:", error);
@@ -535,7 +558,7 @@
 
           item.className = activeClass;
 
-          selectedTemplateLabel.textContent = `已選：${template.template_name}`;
+          selectedTemplateLabel.textContent = `已選擇：${template.template_name}`;
 
           console.log("目前選到的 template_id:", selectedTemplateId);
         });
@@ -614,6 +637,7 @@
     const sidebar = document.getElementById("sidebar");
     const sidebarOverlay = document.getElementById("sidebar-overlay");
     const closeSidebar = document.getElementById("close-sidebar");
+    const shopSidebarBtn = document.getElementById("shop-sidebar-btn");
 
     const toggleSidebar = () => {
       const isOpen = !sidebar.classList.contains("closed");
@@ -634,6 +658,9 @@
     menuToggle.addEventListener("click", toggleSidebar);
     closeSidebar.addEventListener("click", toggleSidebar);
     sidebarOverlay.addEventListener("click", toggleSidebar);
+    shopSidebarBtn.addEventListener("click", () => {
+      window.location.href = "./shop.html";
+    });
 
     const sidebarBtns = document.querySelectorAll(".sidebar-btn");
 
@@ -645,6 +672,7 @@
 
     loadTemplates();
     loadMyGibberishes();
+    loadEquippedAvatar();
   </script>
 </body>
 

@@ -42,7 +42,7 @@ router.post("/signup", async (req, res) => {
         level,
         coin_balance
       )
-      VALUES (?, ?, ?, NOW(), NOW(), 0, 1, 0)
+      VALUES (?, ?, ?, NOW(), NOW(), 0, 1, 2000)
       `,
       [userName, email, password],
     );
@@ -56,7 +56,7 @@ router.post("/signup", async (req, res) => {
         email: email,
         admin: 0,
         level: 1,
-        coin_balance: 0,
+        coin_balance: 2000,
       },
     });
   } catch (error) {
