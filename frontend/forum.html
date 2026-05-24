@@ -98,6 +98,21 @@
             </div>
         </section>
 
+        <section class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-[#006944] flex items-center">
+                        <span class="material-symbols-outlined mr-2">favorite</span>
+                        今日人氣前三名
+                    </h2>
+                    <p class="text-sm text-[#306554]">依照今天收到的愛心數排名。</p>
+                </div>
+            </div>
+            <div id="top-liked-list" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="col-span-full text-center py-8 opacity-50">載入排行榜中...</div>
+            </div>
+        </section>
+
         <div id="forum-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="col-span-full text-center py-20 opacity-50">載入中...</div>
         </div>
@@ -201,6 +216,55 @@
             }
         }
 
+        async function fetchTopLikedToday() {
+            const listContainer = document.getElementById("top-liked-list");
+
+            try {
+                const currentUser = getCurrentUser();
+                const query = new URLSearchParams();
+                if (currentUser?.user_id) {
+                    query.set("user_id", currentUser.user_id);
+                }
+
+                const response = await fetch(`${API_BASE_URL}/report/top-liked-today?${query.toString()}`);
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || "Failed to fetch ranking");
+
+                if (!result.rankings.length) {
+                    listContainer.innerHTML = '<div class="col-span-full text-center py-8 opacity-50">今天還沒有任何點讚。</div>';
+                    return;
+                }
+
+                listContainer.innerHTML = "";
+                result.rankings.forEach((item) => {
+                    const medal = item.rank === 1 ? "🥇" : item.rank === 2 ? "🥈" : "🥉";
+                    const rankColor = item.rank === 1
+                        ? "bg-yellow-100 text-yellow-700"
+                        : item.rank === 2
+                            ? "bg-gray-100 text-gray-600"
+                            : "bg-orange-100 text-orange-700";
+                    const likedClass = item.liked_by_me ? "liked text-red-500" : "text-gray-400";
+                    const gibberishId = Number(item.gibberish_id);
+                    const card = document.createElement("div");
+                    card.className = "bg-white rounded-2xl shadow-sm border border-white/60 p-5";
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${rankColor}">${medal} 第 ${Number(item.rank)} 名</span>
+                            <button type="button" onclick="toggleLike(${gibberishId})" class="like-button flex items-center gap-1 ${likedClass} hover:text-red-500 font-bold" data-gibberish-id="${gibberishId}">
+                                <span class="material-symbols-outlined text-lg">favorite</span>
+                                <span class="like-count">${Number(item.like_count)}</span>
+                            </button>
+                        </div>
+                        <p class="text-[#003629] leading-relaxed mb-3">${escapeHtml(item.content)}</p>
+                        <p class="text-xs text-gray-500">作者：${escapeHtml(item.user_name || "未知作者")}</p>
+                    `;
+                    listContainer.appendChild(card);
+                });
+            } catch (error) {
+                listContainer.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">排行榜載入失敗。</div>';
+            }
+        }
+
         async function toggleLike(gibberishId) {
             const currentUser = getCurrentUser();
             if (!currentUser) {
@@ -221,13 +285,13 @@
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || "Like failed");
 
-                const button = document.querySelector(`.like-button[data-gibberish-id="${gibberishId}"]`);
-                if (!button) return;
-
-                button.classList.toggle("liked", result.liked);
-                button.classList.toggle("text-red-500", result.liked);
-                button.classList.toggle("text-gray-400", !result.liked);
-                button.querySelector(".like-count").textContent = result.like_count;
+                document.querySelectorAll(`.like-button[data-gibberish-id="${gibberishId}"]`).forEach((button) => {
+                    button.classList.toggle("liked", result.liked);
+                    button.classList.toggle("text-red-500", result.liked);
+                    button.classList.toggle("text-gray-400", !result.liked);
+                    button.querySelector(".like-count").textContent = result.like_count;
+                });
+                await fetchTopLikedToday();
             } catch (error) {
                 alert("點讚失敗，請稍後再試");
             }
@@ -384,6 +448,7 @@
         });
 
         fetchForumPosts();
+        fetchTopLikedToday();
 
         const currentUser = getCurrentUser();
         if (isAdminUser(currentUser)) {

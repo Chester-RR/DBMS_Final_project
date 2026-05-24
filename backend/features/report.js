@@ -220,6 +220,69 @@ router.post("/likes/toggle", async (req, res) => {
   }
 });
 
+router.get("/top-liked-today", async (req, res) => {
+  const userId = Number(req.query.user_id);
+
+  try {
+    await ensureLikeTable();
+
+    const [rankings] = await mysqlConnectionPool.query(
+      `
+      SELECT
+        g.gibberish_id,
+        g.content,
+        g.created_at,
+        u.user_name,
+        COUNT(gl.gibberish_like_id) AS like_count
+      FROM GibberishLike gl
+      JOIN Gibberish g ON gl.gibberish_id = g.gibberish_id
+      JOIN User u ON g.user_id = u.user_id
+      WHERE DATE(gl.created_at) = CURDATE()
+        AND g.pinned = 1
+      GROUP BY g.gibberish_id, g.content, g.created_at, u.user_name
+      ORDER BY like_count DESC, g.gibberish_id DESC
+      LIMIT 3
+      `,
+    );
+
+    let likedRows = [];
+    const rankingIds = rankings.map((item) => Number(item.gibberish_id));
+
+    if (Number.isInteger(userId) && userId > 0 && rankingIds.length > 0) {
+      const [rows] = await mysqlConnectionPool.query(
+        `
+        SELECT gibberish_id
+        FROM GibberishLike
+        WHERE user_id = ? AND gibberish_id IN (?)
+        `,
+        [userId, rankingIds],
+      );
+      likedRows = rows;
+    }
+
+    const likedSet = new Set(likedRows.map((row) => Number(row.gibberish_id)));
+
+    return res.json({
+      success: true,
+      rankings: rankings.map((item, index) => ({
+        rank: index + 1,
+        gibberish_id: item.gibberish_id,
+        content: item.content,
+        created_at: item.created_at,
+        user_name: item.user_name,
+        like_count: Number(item.like_count),
+        liked_by_me: likedSet.has(Number(item.gibberish_id)),
+      })),
+    });
+  } catch (error) {
+    console.error("Failed to get today's top liked gibberishes:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get today's top liked gibberishes",
+    });
+  }
+});
+
 router.get("/", async (req, res) => {
   const adminId = req.query.admin_id;
 
