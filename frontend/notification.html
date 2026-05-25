@@ -86,20 +86,40 @@
     <div class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-surface-container-low/50 rounded-full blur-[80px] -z-10"></div>
 
     <main class="w-full max-w-2xl bg-surface-container-lowest/70 backdrop-blur-xl border border-outline-variant/30 rounded-3xl shadow-xl overflow-hidden flex flex-col h-[70vh]">
-      
       <div id="notification-container" class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4">
         <div id="loading-state" class="text-center text-outline-variant py-10 flex flex-col items-center animate-pulse">
             <span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span>
             <p>正在讀取天機...</p>
         </div>
       </div>
-
     </main>
 
+    <div id="notification-modal" class="fixed inset-0 bg-on-surface/40 z-50 hidden flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300">
+      <div class="bg-surface-container-lowest w-11/12 max-w-md rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="notification-modal-content">
+        <div class="p-6 relative">
+          <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          
+          <div class="flex items-center gap-3 mb-4" id="modal-header">
+            </div>
+          <p id="modal-time" class="text-xs text-outline font-medium mb-4"></p>
+          
+          <div class="bg-surface-container-low/30 rounded-2xl p-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+            <p id="modal-body" class="text-base text-on-surface leading-relaxed whitespace-pre-wrap"></p>
+          </div>
+        </div>
+        <div class="p-4 flex justify-end">
+          <button onclick="closeModal()" class="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-dim transition-colors btn-spring-active btn-spring-return">關閉</button>
+        </div>
+      </div>
+    </div>
+
     <script>
-      const API_BASE_URL = "http://localhost:3000/api/notifications"; // 配合後端路由
+      const API_BASE_URL = "http://localhost:3000/api/notifications"; 
       const container = document.getElementById("notification-container");
       const markAllBtn = document.getElementById("mark-all-read-btn");
+      let currentNotifications = [];
 
       // 根據通知類型取得對應的 Icon 與顏色
       function getIconConfig(type) {
@@ -119,7 +139,7 @@
         return `
           <div class="notification-card animate-slide-in relative group cursor-pointer bg-white ${isUnread ? 'border-primary/40 shadow-md' : 'border-outline-variant/20 opacity-80'} border rounded-2xl p-4 flex gap-4 items-start" 
                style="animation-delay: ${index * 0.1}s"
-               onclick="markAsRead('${notification.id}')">
+               onclick="openNotificationDetail('${notification.id}')">
             
             ${isUnread ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,105,68,0.6)]"></div>' : ''}
             
@@ -132,7 +152,7 @@
                 <h3 class="font-bold text-on-surface ${isUnread ? 'text-lg' : 'text-base'}">${notification.title}</h3>
                 <span class="text-xs text-outline font-medium whitespace-nowrap ml-2">${notification.createdAt}</span>
               </div>
-              <p class="text-sm text-on-surface-variant leading-relaxed">
+              <p class="text-sm text-on-surface-variant leading-relaxed line-clamp-2">
                 ${notification.content}
               </p>
             </div>
@@ -143,11 +163,19 @@
       // 取得資料
       async function fetchNotifications() {
         try {
-          const response = await fetch(API_BASE_URL);
+          const userId = localStorage.getItem("user_id") || 101; 
+          const response = await fetch(`${API_BASE_URL}?user_id=${userId}`);
           const result = await response.json();
           
           if(result.success) {
+            currentNotifications = result.data;
             renderNotifications(result.data);
+          } else {
+            console.warn("後端回傳錯誤:", result.message);
+            container.innerHTML = `
+              <div class="text-center text-red-500 py-10 font-bold">
+                無法讀取通知：${result.message || '未知錯誤'}
+              </div>`;
           }
         } catch (error) {
           console.error("Fetch Error:", error);
@@ -165,32 +193,79 @@
             </div>`;
           return;
         }
-        
         container.innerHTML = data.map((n, i) => createNotificationCard(n, i)).join('');
       }
 
-      // 標記單一已讀
-      async function markAsRead(id) {
+      // 標記單一已讀 (控制是否重整畫面)
+      async function markAsRead(id, shouldRefresh = true) {
         try {
           await fetch(`${API_BASE_URL}/${id}/read`, { method: 'PATCH' });
-          fetchNotifications(); // 重新拉取整理畫面 (實務上可以直接改 DOM 效能更好)
+          if(shouldRefresh) fetchNotifications(); 
         } catch (error) {
           console.error(error);
         }
       }
 
+      // 打開 Modal 詳情
+      function openNotificationDetail(id) {
+        const notification = currentNotifications.find(n => String(n.id) === String(id));
+        if(!notification) return;
+
+        const config = getIconConfig(notification.type);
+        document.getElementById('modal-header').innerHTML = `
+          <div class="${config.bg} ${config.color} w-10 h-10 rounded-full flex items-center justify-center shadow-inner">
+            <span class="material-symbols-outlined text-lg">${config.icon}</span>
+          </div>
+          <h2 class="text-xl font-bold text-on-surface">${notification.title}</h2>
+        `;
+        document.getElementById('modal-time').innerText = notification.createdAt;
+        document.getElementById('modal-body').innerText = notification.content;
+
+        const modal = document.getElementById('notification-modal');
+        const modalContent = document.getElementById('notification-modal-content');
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          modalContent.classList.remove('scale-95');
+        }, 10);
+
+        if (!notification.isRead) {
+          markAsRead(id, false); 
+        }
+      }
+
+      // 關閉 Modal
+      function closeModal() {
+        const modal = document.getElementById('notification-modal');
+        const modalContent = document.getElementById('notification-modal-content');
+        
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          fetchNotifications(); 
+        }, 300);
+      }
+
       // 全部標記已讀
       markAllBtn.addEventListener("click", async () => {
         try {
-          // 加上特效按鈕回饋
           markAllBtn.classList.remove("animate-pop-up");
           void markAllBtn.offsetWidth;
           markAllBtn.classList.add("animate-pop-up");
           markAllBtn.innerText = "處理中...";
 
-          await fetch(`${API_BASE_URL}/read-all`, { method: 'PATCH' });
-          await fetchNotifications();
+          const userId = localStorage.getItem("user_id") || 101;
+
+          await fetch(`${API_BASE_URL}/read-all`, { 
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
           
+          await fetchNotifications();
           markAllBtn.innerText = "全部標記為已讀";
         } catch (error) {
           console.error(error);
