@@ -12,6 +12,7 @@ import loginRoutes from "./features/login.js"; //之後開發好的功能就impo
 import gibberishRoutes from "./features/gibberish.js";
 
 import levelRoutes from "./features/level.js"; // level / title / avatar frame routes
+import shopRoutes from "./features/shop.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use((req, res, next) => {
 
 app.use("/user", loginRoutes); ////用到功能的middleware
 app.use("/gibberish", gibberishRoutes);
+app.use("/shop", shopRoutes);
 app.use("/level", levelRoutes); //// 等級、稱號、頭像框功能
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
