@@ -148,53 +148,60 @@
     #sidebar.closed {
       transform: translateX(-100%);
     }
+      /* 使用者卡片外觀區：由後端 /level API 回傳的 currentFrame 動態控制。
+         --frame-border / --frame-glow / --frame-bg 會在 applyUserProfile() 裡被 setProperty 更新，
+         所以資料庫 AvatarFrame 的顏色與 CSS 背景可以直接影響右上角使用者卡片。 */
+      #user-box {
+        --frame-border: #82b8a4;
+        --frame-glow: rgba(0, 105, 68, 0.18);
+        --frame-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(192, 254, 229, 0.82)
+        );
+        background: var(--frame-bg);
+        border-color: var(--frame-border);
+        box-shadow: 0 10px 28px var(--frame-glow);
+      }
 
     #sidebar-overlay {
       transition: opacity 0.4s ease;
     }
 
-    #sidebar-overlay.closed {
-      opacity: 0;
-      pointer-events: none;
-    }
 
-    /* 使用者卡片外觀區：由後端 /level API 回傳的 currentFrame 動態控制。
-         --frame-border / --frame-glow / --frame-bg 會在 applyUserProfile() 裡被 setProperty 更新，
-         所以資料庫 AvatarFrame 的顏色與 CSS 背景可以直接影響右上角使用者卡片。 */
-    #user-box {
-      --frame-border: #82b8a4;
-      --frame-glow: rgba(0, 105, 68, 0.18);
-      --frame-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(192, 254, 229, 0.82));
-      background: var(--frame-bg);
-      border-color: var(--frame-border);
-      box-shadow: 0 10px 28px var(--frame-glow);
-    }
+  #sidebar-overlay.closed {
+  opacity: 0;
+  pointer-events: none;
+}
 
-    #user-box::before {
-      content: "";
-      position: absolute;
-      inset: -3px;
-      border: 2px solid var(--frame-border);
-      border-radius: 1.1rem;
-      opacity: 0.55;
-      pointer-events: none;
-    }
+#user-box::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--frame-border);
+  border-radius: 1.1rem;
+  opacity: 0.55;
+  pointer-events: none;
+}
 
-    #avatar-frame {
-      border-color: var(--frame-border);
-      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55), 0 0 18px var(--frame-glow);
-    }
+#avatar-frame {
+  border-color: var(--frame-border);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.55),
+    0 0 18px var(--frame-glow);
+}
 
-    #user-title {
-      color: var(--frame-border);
-      text-shadow: 0 1px 8px rgba(255, 255, 255, 0.75);
-    }
-  </style>
+#user-title {
+  color: var(--frame-border);
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.75);
+}
+</style>
 </head>
 
 <body class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col overflow-hidden">
   <!-- Sidebar Overlay -->
   <div class="fixed inset-0 bg-black/20 z-40 closed backdrop-blur-sm" id="sidebar-overlay"></div>
+
   <!-- Sidebar -->
   <aside
     class="fixed top-0 left-0 h-full w-80 bg-surface-container-lowest/90 backdrop-blur-xl z-50 closed shadow-2xl border-r border-outline-variant/30 flex flex-col p-6"
@@ -207,33 +214,48 @@
         <span class="material-symbols-outlined">close</span>
       </button>
     </div>
+
     <nav class="flex flex-col gap-4">
       <button
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>選擇模板</span>
       </button>
+
       <button
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>我的等級</span>
       </button>
+
       <button
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>我的成就</span>
       </button>
+
       <button
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>檢舉</span>
       </button>
+
       <button
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>論壇</span>
       </button>
-      <button id="shop-sidebar-btn"
+
+      <button
+        id="shop-sidebar-btn"
         class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
         <span>商店</span>
       </button>
+
+      <button
+        id="logout-btn"
+        class="group relative w-full py-4 bg-white/90 border border-outline-variant text-primary font-bold text-lg rounded-2xl shadow-md hover:bg-surface-container-high btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span class="material-symbols-outlined">logout</span>
+        <span>登出</span>
+      </button>
     </nav>
   </aside>
+
   <!-- Main Content -->
   <main class="flex-grow flex flex-col items-center justify-end px-8 text-center relative pb-[10vh]">
     <!-- Top-Left Menu Icon -->
@@ -244,34 +266,42 @@
         <span class="material-symbols-outlined text-3xl">menu</span>
       </button>
     </div>
+
     <!-- Top-Center Motto Box -->
-    <div class="absolute top-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[280px] sm:max-w-xs px-4">
+    <div class="absolute top-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[900px] px-4">
       <div
-        class="bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-4 shadow-lg flex flex-col min-h-[80px] items-start text-left">
+        class="bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl px-6 py-3 shadow-lg flex flex-col min-h-[64px] items-start text-left">
         <span class="text-primary/70 text-[10px] font-bold uppercase tracking-widest">今天的至理名言</span>
-        <!-- Empty area for the motto content as requested -->
+        <p id="today-motto-content" class="mt-2 text-primary text-base font-extrabold leading-snug">
+          尚未置頂亂語
+        </p>
         <div class="w-full h-4 bg-surface-container-high/20 rounded-full animate-pulse hidden"></div>
       </div>
     </div>
+
     <!-- Top-Right User Box -->
     <div class="absolute top-8 right-8 z-30">
       <button
         class="relative min-w-[230px] border px-4 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 text-on-surface-variant group"
         id="user-box">
-        <span class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
+        <span
+          class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
           id="avatar-frame">
           <span class="material-symbols-outlined text-3xl">account_circle</span>
         </span>
+
         <span class="flex flex-col items-start leading-tight text-left">
           <span class="flex items-center gap-2">
             <span class="font-extrabold text-base text-on-surface" id="user-name">username</span>
-            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary"
-              id="user-level">Lv.1</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary" id="user-level">
+              Lv.1
+            </span>
           </span>
           <span class="text-xs font-bold tracking-wide" id="user-title">無名生成者</span>
         </span>
       </button>
     </div>
+
     <!-- Floating Glass Accents -->
     <div class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary-container/20 rounded-full blur-[100px] -z-10">
     </div>
@@ -285,12 +315,14 @@
         <div class="flex flex-col items-center w-full" id="string-carousel">
           <!-- Items appear here -->
         </div>
-      </div>
+
+       </div>
+
       <!-- Huge Interactive Primary Button -->
       <button
         class="group relative w-full py-8 bg-primary text-on-primary font-extrabold text-3xl rounded-full shadow-[0px_16px_48px_rgba(0,54,41,0.15)] hover:shadow-[0px_20px_56px_rgba(0,54,41,0.2)] btn-spring-return btn-spring-active flex items-center justify-center gap-6 active:shadow-sm z-20"
         id="interactive-btn">
-        <span>互動按鈕</span>
+        <span>生成亂語</span>
         <span class="material-symbols-outlined text-4xl" data-icon="touch_app">touch_app</span>
       </button>
     </div>
@@ -301,8 +333,9 @@
       <div class="mb-3">
         <h3 class="text-primary font-extrabold text-lg">選擇模板</h3>
         <p class="text-on-surface-variant text-xs mt-1">
-          選好模板後，按中間的互動按鈕產生亂語
+          選好模板後，按中間的生成亂語按鈕產生亂語
         </p>
+
       </div>
 
       <div id="selected-template-label"
@@ -318,15 +351,90 @@
 
   <script>
 
-    const API_BASE_URL = "http://localhost:3000";
-    const currentUserId =
-      localStorage.getItem("user_id") || localStorage.getItem("userId") || "1";
+      const API_BASE_URL = "http://localhost:3000";
+      const currentUserId = localStorage.getItem("user_id");
 
-    const btn = document.getElementById("interactive-btn");
-    const container = document.getElementById("string-carousel");
-    const scrollContainer = document.getElementById("scroll-container");
+      if (!currentUserId) {
+        alert("請先登入");
+        window.location.href = "./login.html";
+      }
 
+      const btn = document.getElementById("interactive-btn");
+      const container = document.getElementById("string-carousel");
+      const scrollContainer = document.getElementById("scroll-container");
+      const mottoContent = document.getElementById("today-motto-content");
 
+      function setTodayMotto(gibberish) {
+        if (!mottoContent) {
+          return;
+        }
+
+        if (!gibberish) {
+          mottoContent.textContent = "尚未置頂亂語";
+          return;
+        }
+
+        mottoContent.textContent = gibberish.content;
+      }
+
+      async function loadPinnedGibberish() {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/gibberish/pinned?user_id=${Number(currentUserId)}`,
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to load pinned gibberish");
+          }
+
+          const data = await response.json();
+
+          setTodayMotto(data.pinnedGibberish);
+        } catch (error) {
+          console.error("載入置頂亂語失敗:", error);
+        }
+      }
+
+      async function pinGibberish(gibberishId, content, pinBtn) {
+        if (!gibberishId) {
+          alert(
+            "這筆亂語沒有 gibberish_id，請確認後端 /gibberish/generate 有回傳 gibberish_id",
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/gibberish/pin`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: Number(currentUserId),
+              gibberish_id: Number(gibberishId),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to pin gibberish");
+          }
+
+          const data = await response.json();
+
+          setTodayMotto(data.pinnedGibberish || { content });
+
+          document.querySelectorAll(".pin-btn").forEach((button) => {
+            button.classList.remove("bg-primary", "text-white");
+            button.classList.add("bg-surface-container-high", "text-primary");
+          });
+
+          pinBtn.classList.remove("bg-surface-container-high", "text-primary");
+          pinBtn.classList.add("bg-primary", "text-white");
+        } catch (error) {
+          console.error("置頂亂語失敗:", error);
+          alert("置頂亂語失敗，請確認後端 POST /gibberish/pin 是否正常");
+        }
+      }
 
 
     // 將後端 /level/:userId 回傳的 profile 套到右上角使用者卡片。
@@ -336,20 +444,34 @@
       const userLevel = document.getElementById("user-level");
       const userTitle = document.getElementById("user-title");
       const frame = profile.currentFrame;
+      
 
-      userName.textContent = profile.user.name || "username";
+
+        userName.textContent = profile.user.name || "username";
       userLevel.textContent = `Lv.${profile.user.level}`;
       userTitle.textContent = profile.currentTitle.title_name || "無名生成者";
 
-      userBox.style.setProperty("--frame-border", frame.border_color || "#82b8a4");
-      userBox.style.setProperty("--frame-glow", frame.glow_color || "rgba(0, 105, 68, 0.18)");
-      userBox.style.setProperty("--frame-bg", frame.background_css || "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82))");
+      userBox.style.setProperty(
+        "--frame-border",
+        frame.border_color || "#82b8a4",
+      );
+      userBox.style.setProperty(
+        "--frame-glow",
+        frame.glow_color || "rgba(0, 105, 68, 0.18)",
+      );
+      userBox.style.setProperty(
+        "--frame-bg",
+        frame.background_css ||
+          "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82))",
+      );
     }
 
     // 頁面載入時呼叫：讀取目前使用者的等級資料，並讓後端順便同步稱號與頭像框。
     async function loadUserProfile() {
       try {
-        const response = await fetch(`http://localhost:3000/level/${currentUserId}`);
+        const response = await fetch(
+          `http://localhost:3000/level/${currentUserId}`,
+        );
         const data = await response.json();
 
         if (data.success) {
@@ -391,19 +513,23 @@
         });
         const data = await response.json();
 
-        if (data.success) {
-          applyUserProfile(data.profile);
+
+           if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Level profile is not ready yet:", error);
         }
-      } catch (error) {
-        console.warn("Generation count was not recorded:", error);
       }
-    }
+
+
 
 
     const templateList = document.getElementById("template-list");
     const selectedTemplateLabel = document.getElementById(
       "selected-template-label",
     );
+
 
     let selectedTemplateId = null;
 
@@ -414,16 +540,25 @@
       userNameText.textContent = `用戶名：${savedUserName}`;
     }
 
-    function renderGibberishCard(gibberish, options = {}) {
-      const content =
-        typeof gibberish === "string" ? gibberish : gibberish.content;
+
+      function renderGibberishCard(gibberish, options = {}) {
+        const shouldRecordGeneration =
+          typeof options === "boolean"
+            ? options
+            : Boolean(options.shouldRecordGeneration);
+
+        const content =
+          typeof gibberish === "string" ? gibberish : gibberish.content;
+
 
       const gibberishId =
         typeof gibberish === "string" ? null : gibberish.gibberish_id;
 
-      const wrapper = document.createElement("div");
-      wrapper.className =
-        "string-item pointer-events-auto flex items-center justify-center gap-3 string-hover-effect";
+        const wrapper = document.createElement("div");
+        const isPinned =
+          typeof gibberish !== "string" && Boolean(gibberish.pinned);
+        wrapper.className =
+          "string-item pointer-events-auto flex items-center justify-center gap-3 string-hover-effect";
 
       if (gibberishId) {
         wrapper.dataset.gibberishId = gibberishId;
@@ -434,29 +569,33 @@
         <span class="text-3xl font-extrabold text-primary">${content}</span>
       </div>
 
-      <button class="pin-btn bg-secondary w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg hover:bg-primary transition-colors duration-200">
-        <span class="material-symbols-outlined text-2xl">push_pin</span>
-      </button>
-    `;
+      <button class="pin-btn ${
+        isPinned
+          ? "bg-primary text-white"
+          : "bg-surface-container-high text-primary"
+      } w-14 h-14 rounded-xl flex items-center justify-center shadow-lg hover:bg-primary hover:text-white transition-colors duration-200">
+  <span class="material-symbols-outlined text-2xl">push_pin</span>
+</button>
+`;
 
       const pinBtn = wrapper.querySelector(".pin-btn");
 
-      pinBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
+        pinBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
 
         pinBtn.classList.remove("animate-pop-up");
         void pinBtn.offsetWidth;
         pinBtn.classList.add("animate-pop-up");
 
-        console.log("pin gibberish_id:", gibberishId);
-      });
+          await pinGibberish(gibberishId, content, pinBtn);
+        });
 
       container.appendChild(wrapper);
 
-      // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
-      if (options.recordGeneration !== false) {
-        recordGeneration();
-      }
+        // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
+        if (shouldRecordGeneration) {  
+          recordGeneration();
+        }
 
       requestAnimationFrame(() => {
         scrollContainer.scrollTo({
@@ -466,7 +605,7 @@
       });
     }
 
-    async function loadMyGibberishes() {
+       async function loadMyGibberishes() {
       const userId = localStorage.getItem("user_id");
 
       if (!userId) {
@@ -487,7 +626,7 @@
         container.innerHTML = "";
 
         gibberishes.forEach((gibberish) => {
-          renderGibberishCard(gibberish, { recordGeneration: false });
+          renderGibberishCard(gibberish, false);
         });
       } catch (error) {
         console.error("載入我的亂語失敗:", error);
@@ -571,7 +710,7 @@
       });
     }
 
-    btn.addEventListener("click", async () => {
+       btn.addEventListener("click", async () => {
       if (!selectedTemplateId) {
         alert("請先選擇一個模板");
         return;
@@ -605,27 +744,47 @@
 
         console.log("後端回傳資料:", data);
 
-        const content =
-          data.content || data.gibberish?.content || data.result?.content;
+        const newGibberish = data.gibberish || data.result || data;
+        const content = newGibberish.content;
+        const gibberishId = newGibberish.gibberish_id;
 
         if (!content) {
           throw new Error("後端沒有回傳 content");
         }
 
-        renderGibberishCard(data);
+        if (!gibberishId) {
+          throw new Error("後端沒有回傳 gibberish_id");
+        }
+
+        renderGibberishCard(newGibberish, true);
       } catch (error) {
         console.error("產生亂語失敗:", error);
         alert("產生亂語失敗，請確認後端 POST /gibberish/generate 是否正常");
       }
     });
 
-    const userBox = document.getElementById("user-box");
 
-    userBox.addEventListener("click", () => {
-      userBox.classList.remove("animate-pop-up");
-      void userBox.offsetWidth;
-      userBox.classList.add("animate-pop-up");
-    });
+      const userBox = document.getElementById("user-box");
+
+      userBox.addEventListener("click", () => {
+        userBox.classList.remove("animate-pop-up");
+        void userBox.offsetWidth;
+        userBox.classList.add("animate-pop-up");
+      });
+
+      const logoutBtn = document.getElementById("logout-btn");
+
+      logoutBtn.addEventListener("click", () => {
+        const confirmLogout = confirm("確定要登出嗎?");
+
+        if (confirmLogout) {
+          localStorage.removeItem("user_id");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("user_name");
+
+          window.location.href = "./login.html";
+        }
+      });
 
 
     // 初次進入頁面時先抓一次 profile，讓右上角使用者卡片不是停在預設值。
@@ -672,8 +831,10 @@
 
     loadTemplates();
     loadMyGibberishes();
+    loadPinnedGibberish();
     loadEquippedAvatar();
   </script>
 </body>
-
 </html>
+
+   
