@@ -2,7 +2,132 @@ import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
+/*
+  POST /gibberish/pin
 
+  用途：
+  將某一筆亂語設為目前使用者的置頂亂語
+*/
+router.post("/pin", async (req, res) => {
+  const { user_id, gibberish_id } = req.body;
+
+  if (!user_id || !gibberish_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing user_id or gibberish_id",
+    });
+  }
+
+  const connection = await mysqlConnectionPool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      `
+      SELECT gibberish_id, user_id, content
+      FROM Gibberish
+      WHERE gibberish_id = ?
+        AND user_id = ?
+      `,
+      [gibberish_id, user_id],
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
+        success: false,
+        message: "Gibberish not found or does not belong to this user",
+      });
+    }
+
+    // 先把這個使用者以前置頂的亂語取消
+    await connection.query(
+      `
+      UPDATE Gibberish
+      SET pinned = FALSE
+      WHERE user_id = ?
+      `,
+      [user_id],
+    );
+
+    // 再把這一句設為置頂
+    await connection.query(
+      `
+      UPDATE Gibberish
+      SET pinned = TRUE
+      WHERE gibberish_id = ?
+        AND user_id = ?
+      `,
+      [gibberish_id, user_id],
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      pinnedGibberish: {
+        ...rows[0],
+        pinned: true,
+      },
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    console.error("Failed to pin gibberish:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to pin gibberish",
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+/*
+  GET /gibberish/pinned?user_id=1
+
+  用途：
+  取得目前使用者置頂的亂語，給「今天的至理名言」顯示
+*/
+router.get("/pinned", async (req, res) => {
+  const { user_id } = req.query;
+
+  if (!user_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing user_id",
+    });
+  }
+
+  try {
+    const [rows] = await mysqlConnectionPool.query(
+      `
+      SELECT gibberish_id, content, created_at, pinned
+      FROM Gibberish
+      WHERE user_id = ?
+        AND pinned = TRUE
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [user_id],
+    );
+
+    res.json({
+      success: true,
+      pinnedGibberish: rows[0] || null,
+    });
+  } catch (error) {
+    console.error("Failed to get pinned gibberish:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get pinned gibberish",
+    });
+  }
+});
 /*
   GET /gibberish/templates
 
