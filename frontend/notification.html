@@ -1,0 +1,280 @@
+<!doctype html>
+<html class="light" lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>通知中心 | While The AI Thinks</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              "primary-dim": "#005c3b",
+              surface: "#d9ffee",
+              "surface-container-low": "#c0fee5",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-surface-variant": "#306554",
+              outline: "#4c816e",
+              "outline-variant": "#82b8a4",
+            },
+            fontFamily: { body: ["Inter"] },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+      
+      /* Spring Animation */
+      .btn-spring-active:active { transform: scale(0.95); transition: none; }
+      .btn-spring-return { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+      /* Mesh Background */
+      .atrium-mesh {
+        background-color: #d9ffee;
+        background-image:
+          radial-gradient(at 0% 0%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 100% 0%, #7efdbe 0px, transparent 50%),
+          radial-gradient(at 100% 100%, #c0fee5 0px, transparent 50%),
+          radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+      }
+
+      /* Custom Scrollbar */
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4c816e; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #006944; }
+
+      .notification-card {
+        transition: all 0.3s ease;
+      }
+      .notification-card:hover {
+        transform: translateY(-2px);
+      }
+      
+      /* 進入動畫 */
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-slide-in { animation: slideIn 0.4s ease forwards; }
+    </style>
+  </head>
+
+  <body class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col items-center py-10 px-4 relative">
+    
+    <div class="w-full max-w-2xl flex items-center justify-between mb-8 z-10">
+      <button onclick="history.back()" class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant w-12 h-12 rounded-xl flex items-center justify-center shadow-sm hover:bg-white transition-all text-on-surface-variant btn-spring-return btn-spring-active">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h1 class="text-3xl font-extrabold text-primary flex items-center gap-2">
+        <span class="material-symbols-outlined text-4xl">notifications</span>
+        通知中心
+      </h1>
+      <button id="mark-all-read-btn" class="text-sm font-bold text-primary bg-white/50 px-4 py-2 rounded-lg border border-primary/20 hover:bg-white shadow-sm transition-all btn-spring-return btn-spring-active">
+        全部標記為已讀
+      </button>
+    </div>
+
+    <div class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-surface-container-low/50 rounded-full blur-[80px] -z-10"></div>
+
+    <main class="w-full max-w-2xl bg-surface-container-lowest/70 backdrop-blur-xl border border-outline-variant/30 rounded-3xl shadow-xl overflow-hidden flex flex-col h-[70vh]">
+      <div id="notification-container" class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4">
+        <div id="loading-state" class="text-center text-outline-variant py-10 flex flex-col items-center animate-pulse">
+            <span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span>
+            <p>正在讀取天機...</p>
+        </div>
+      </div>
+    </main>
+
+    <div id="notification-modal" class="fixed inset-0 bg-on-surface/40 z-50 hidden flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300">
+      <div class="bg-surface-container-lowest w-11/12 max-w-md rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="notification-modal-content">
+        <div class="p-6 relative">
+          <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          
+          <div class="flex items-center gap-3 mb-4" id="modal-header">
+            </div>
+          <p id="modal-time" class="text-xs text-outline font-medium mb-4"></p>
+          
+          <div class="bg-surface-container-low/30 rounded-2xl p-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+            <p id="modal-body" class="text-base text-on-surface leading-relaxed whitespace-pre-wrap"></p>
+          </div>
+        </div>
+        <div class="p-4 flex justify-end">
+          <button onclick="closeModal()" class="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-dim transition-colors btn-spring-active btn-spring-return">關閉</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE_URL = "http://localhost:3000/api/notifications"; 
+      const container = document.getElementById("notification-container");
+      const markAllBtn = document.getElementById("mark-all-read-btn");
+      let currentNotifications = [];
+
+      // 根據通知類型取得對應的 Icon 與顏色
+      function getIconConfig(type) {
+        switch(type) {
+          case 'SYSTEM': return { icon: 'info', color: 'text-blue-600', bg: 'bg-blue-100' };
+          case 'LIKE': return { icon: 'thumb_up', color: 'text-pink-600', bg: 'bg-pink-100' };
+          case 'ACHIEVEMENT': return { icon: 'emoji_events', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+          default: return { icon: 'notifications', color: 'text-primary', bg: 'bg-surface-container-high' };
+        }
+      }
+
+      // 渲染單一通知卡片
+      function createNotificationCard(notification, index) {
+        const config = getIconConfig(notification.type);
+        const isUnread = !notification.isRead;
+        
+        return `
+          <div class="notification-card animate-slide-in relative group cursor-pointer bg-white ${isUnread ? 'border-primary/40 shadow-md' : 'border-outline-variant/20 opacity-80'} border rounded-2xl p-4 flex gap-4 items-start" 
+               style="animation-delay: ${index * 0.1}s"
+               onclick="openNotificationDetail('${notification.id}')">
+            
+            ${isUnread ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,105,68,0.6)]"></div>' : ''}
+            
+            <div class="${config.bg} ${config.color} w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner">
+              <span class="material-symbols-outlined">${config.icon}</span>
+            </div>
+            
+            <div class="flex-1">
+              <div class="flex justify-between items-start mb-1">
+                <h3 class="font-bold text-on-surface ${isUnread ? 'text-lg' : 'text-base'}">${notification.title}</h3>
+                <span class="text-xs text-outline font-medium whitespace-nowrap ml-2">${notification.createdAt}</span>
+              </div>
+              <p class="text-sm text-on-surface-variant leading-relaxed line-clamp-2">
+                ${notification.content}
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      // 取得資料
+      async function fetchNotifications() {
+        try {
+          const userId = localStorage.getItem("user_id") || 101; 
+          const response = await fetch(`${API_BASE_URL}?user_id=${userId}`);
+          const result = await response.json();
+          
+          if(result.success) {
+            currentNotifications = result.data;
+            renderNotifications(result.data);
+          } else {
+            console.warn("後端回傳錯誤:", result.message);
+            container.innerHTML = `
+              <div class="text-center text-red-500 py-10 font-bold">
+                無法讀取通知：${result.message || '未知錯誤'}
+              </div>`;
+          }
+        } catch (error) {
+          console.error("Fetch Error:", error);
+          container.innerHTML = `<div class="text-center text-red-500 py-10">無法連線至伺服器</div>`;
+        }
+      }
+
+      // 渲染列表
+      function renderNotifications(data) {
+        if(data.length === 0) {
+          container.innerHTML = `
+            <div class="text-center text-outline-variant py-10 flex flex-col items-center">
+              <span class="material-symbols-outlined text-5xl mb-4 opacity-50">notifications_paused</span>
+              <p>目前沒有任何通知</p>
+            </div>`;
+          return;
+        }
+        container.innerHTML = data.map((n, i) => createNotificationCard(n, i)).join('');
+      }
+
+      // 標記單一已讀 (控制是否重整畫面)
+      async function markAsRead(id, shouldRefresh = true) {
+        try {
+          await fetch(`${API_BASE_URL}/${id}/read`, { method: 'PATCH' });
+          if(shouldRefresh) fetchNotifications(); 
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      // 打開 Modal 詳情
+      function openNotificationDetail(id) {
+        const notification = currentNotifications.find(n => String(n.id) === String(id));
+        if(!notification) return;
+
+        const config = getIconConfig(notification.type);
+        document.getElementById('modal-header').innerHTML = `
+          <div class="${config.bg} ${config.color} w-10 h-10 rounded-full flex items-center justify-center shadow-inner">
+            <span class="material-symbols-outlined text-lg">${config.icon}</span>
+          </div>
+          <h2 class="text-xl font-bold text-on-surface">${notification.title}</h2>
+        `;
+        document.getElementById('modal-time').innerText = notification.createdAt;
+        document.getElementById('modal-body').innerText = notification.content;
+
+        const modal = document.getElementById('notification-modal');
+        const modalContent = document.getElementById('notification-modal-content');
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          modalContent.classList.remove('scale-95');
+        }, 10);
+
+        if (!notification.isRead) {
+          markAsRead(id, false); 
+        }
+      }
+
+      // 關閉 Modal
+      function closeModal() {
+        const modal = document.getElementById('notification-modal');
+        const modalContent = document.getElementById('notification-modal-content');
+        
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          fetchNotifications(); 
+        }, 300);
+      }
+
+      // 全部標記已讀
+      markAllBtn.addEventListener("click", async () => {
+        try {
+          markAllBtn.classList.remove("animate-pop-up");
+          void markAllBtn.offsetWidth;
+          markAllBtn.classList.add("animate-pop-up");
+          markAllBtn.innerText = "處理中...";
+
+          const userId = localStorage.getItem("user_id") || 101;
+
+          await fetch(`${API_BASE_URL}/read-all`, { 
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
+          
+          await fetchNotifications();
+          markAllBtn.innerText = "全部標記為已讀";
+        } catch (error) {
+          console.error(error);
+          markAllBtn.innerText = "發生錯誤";
+        }
+      });
+
+      // 初始化
+      fetchNotifications();
+    </script>
+  </body>
+</html>
