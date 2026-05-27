@@ -90,20 +90,37 @@
           </p>
         </div>
         <!-- Form Content -->
-        <form class="space-y-6">
+        <form class="space-y-6" id="login-form">
+          <!-- Sign Up Username Field -->
+          <div class="space-y-2 hidden" id="signup-username-field">
+            <label
+              class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
+              for="user-name"
+            >
+              Username
+            </label>
+            <div class="relative">
+              <input
+                class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
+                id="user-name"
+                type="text"
+              />
+            </div>
+          </div>
           <!-- Username/Email Field -->
           <div class="space-y-2">
             <label
               class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80"
               for="email"
             >
-              Username or Email
+              Email
             </label>
             <div class="relative">
               <input
                 class="w-full bg-gray-200 border-none rounded-lg px-5 py-4 text-on-surface font-body text-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all duration-200 outline-none"
                 id="email"
                 type="email"
+                required
               />
             </div>
           </div>
@@ -163,6 +180,7 @@
             <a
               class="font-bold text-primary hover:text-primary-dim underline decoration-primary/30 underline-offset-4 transition-all"
               href="#"
+              id="signup-toggle"
             >
               Sign Up
             </a>
@@ -170,71 +188,152 @@
         </div>
       </div>
     </main>
+
+    <script>
+      const API_BASE_URL = "http://localhost:3000";
+
+      const passwordInput = document.getElementById("password");
+      const toggleBtn = document.getElementById("password-toggle");
+      const eyeIcon = document.getElementById("eye-icon");
+      const loginBtn = document.getElementById("login-btn");
+      const loginForm = document.getElementById("login-form");
+      const emailInput = document.getElementById("email");
+
+      const signupToggle = document.getElementById("signup-toggle");
+      const signupUsernameField = document.getElementById(
+        "signup-username-field",
+      );
+      const userNameInput = document.getElementById("user-name");
+
+      let isSignupMode = false;
+
+      toggleBtn.addEventListener("click", () => {
+        const isPassword = passwordInput.getAttribute("type") === "password";
+
+        passwordInput.setAttribute("type", isPassword ? "text" : "password");
+
+        eyeIcon.style.opacity = "0";
+
+        setTimeout(() => {
+          eyeIcon.textContent = isPassword ? "visibility_off" : "visibility";
+          eyeIcon.style.opacity = "1";
+        }, 100);
+      });
+
+      signupToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        isSignupMode = !isSignupMode;
+
+        if (isSignupMode) {
+          signupUsernameField.classList.remove("hidden");
+          loginBtn.textContent = "Sign Up";
+          signupToggle.textContent = "Login";
+        } else {
+          signupUsernameField.classList.add("hidden");
+          loginBtn.textContent = "Login";
+          signupToggle.textContent = "Sign Up";
+        }
+      });
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const userName = userNameInput.value.trim();
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(email)) {
+          alert("請輸入正確的 email 格式，例如：test@example.com");
+          return;
+        }
+
+        if (isSignupMode && !userName) {
+          alert("請輸入 username");
+          return;
+        }
+
+        loginBtn.classList.add("active");
+        loginBtn.disabled = true;
+        loginBtn.textContent = isSignupMode ? "Signing up..." : "Logging in...";
+
+        try {
+          const url = isSignupMode
+            ? `${API_BASE_URL}/user/signup`
+            : `${API_BASE_URL}/user/login`;
+
+          const body = isSignupMode
+            ? {
+                user_name: userName,
+                email: email,
+                password: password,
+              }
+            : {
+                email: email,
+                password: password,
+              };
+
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+
+          const data = await response.json();
+
+          console.log("User API 回傳資料:", data);
+
+          if (!response.ok || !data.success) {
+            alert(data.message || "操作失敗");
+            return;
+          }
+
+          localStorage.setItem("user_id", data.user.user_id);
+          localStorage.setItem("user_name", data.user.user_name);
+          localStorage.setItem("email", data.user.email);
+
+          window.location.href = "./interface.html";
+        } catch (error) {
+          console.error("User API 錯誤:", error);
+          alert("操作失敗，請確認後端 /user/login 或 /user/signup 是否正常");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = isSignupMode ? "Sign Up" : "Login";
+        }
+      });
+    </script>
+    <style>
+      #eye-icon {
+        transition: opacity 0.15s ease-in-out;
+      }
+
+      /* press down */
+      .btn-spring-active:active {
+        transform: scale(0.95);
+        background-color: #005c3b; /* 深綠 */
+        transition: none;
+      }
+
+      /* pop up  */
+      .btn-spring-return {
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      @keyframes pop {
+        0% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.08);
+        }
+        100% {
+          transform: scale(1.03);
+        }
+      }
+    </style>
   </body>
-  <script>
-    const passwordInput = document.getElementById("password");
-    const toggleBtn = document.getElementById("password-toggle");
-    const eyeIcon = document.getElementById("eye-icon");
-    const loginBtn = document.getElementById("login-btn");
-
-    toggleBtn.addEventListener("click", () => {
-      const isPassword = passwordInput.getAttribute("type") === "password";
-
-      // Toggle input type
-      passwordInput.setAttribute("type", isPassword ? "text" : "password");
-
-      // Animate icon change (simple fade)
-      eyeIcon.style.opacity = "0";
-
-      setTimeout(() => {
-        // Toggle Material Symbol icon
-        eyeIcon.textContent = isPassword ? "visibility_off" : "visibility";
-        eyeIcon.style.opacity = "1";
-      }, 100);
-    });
-
-    loginBtn.addEventListener("click", (e) => {
-      e.preventDefault(); // 先擋住提交（測試動畫用）
-
-      // 1️⃣ 變色
-      loginBtn.classList.add("active");
-
-      // 2️⃣ pop 動畫
-      loginBtn.classList.add("clicked");
-
-      // 3️⃣ 清掉動畫 class（讓下次可以再觸發）
-      setTimeout(() => {
-        loginBtn.classList.remove("clicked");
-      }, 250);
-    });
-  </script>
-  <style>
-    #eye-icon {
-      transition: opacity 0.15s ease-in-out;
-    }
-
-    /* press down */
-    .btn-spring-active:active {
-      transform: scale(0.95);
-      background-color: #005c3b; /* 深綠 */
-      transition: none;
-    }
-
-    /* pop up  */
-    .btn-spring-return {
-      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes pop {
-      0% {
-        transform: scale(1);
-      }
-      40% {
-        transform: scale(1.08);
-      }
-      100% {
-        transform: scale(1.03);
-      }
-    }
-  </style>
 </html>

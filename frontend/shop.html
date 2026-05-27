@@ -1,0 +1,236 @@
+<!doctype html>
+<html class="light" lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>商店</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              surface: "#d9ffee",
+              "surface-low": "#c0fee5",
+              "surface-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-muted": "#306554",
+              outline: "#82b8a4",
+            },
+            fontFamily: {
+              body: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 500,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-surface font-body text-on-surface">
+    <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6">
+      <header class="flex flex-col gap-4 border-b border-outline/50 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+          <button
+            id="back-btn"
+            class="flex h-11 w-11 items-center justify-center rounded-lg border border-outline bg-white/80 text-primary shadow-sm hover:bg-surface-low"
+            type="button"
+            title="返回"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div>
+            <h1 class="text-2xl font-extrabold">商店</h1>
+            <p class="mt-1 text-sm font-medium text-on-muted">購買並裝備你的頭像</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-lg border border-outline bg-white/80 px-4 py-3 shadow-sm">
+          <span class="material-symbols-outlined text-primary">paid</span>
+          <span class="text-sm font-bold text-on-muted">金錢</span>
+          <span id="coin-balance" class="min-w-16 text-right text-xl font-extrabold text-primary">--</span>
+        </div>
+      </header>
+
+      <section class="grid flex-1 gap-5 py-6 lg:grid-cols-[260px_1fr]">
+        <aside class="rounded-lg border border-outline bg-white/75 p-5 shadow-sm">
+          <div class="flex items-center gap-3">
+            <div class="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-outline bg-surface-low text-primary">
+              <span id="current-avatar-icon" class="material-symbols-outlined text-4xl">account_circle</span>
+            </div>
+            <div class="min-w-0">
+              <p id="user-name" class="truncate text-lg font-extrabold">使用者</p>
+              <p id="current-avatar-name" class="mt-1 text-sm font-bold text-on-muted">尚未裝備頭像</p>
+            </div>
+          </div>
+        </aside>
+
+        <section>
+          <div
+            id="shop-list"
+            class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          >
+            <p class="text-sm font-bold text-on-muted">正在載入商品...</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const API_BASE_URL = "http://localhost:3000";
+      const userId = localStorage.getItem("user_id") || localStorage.getItem("userId");
+      const shopList = document.getElementById("shop-list");
+      const coinBalance = document.getElementById("coin-balance");
+      const userName = document.getElementById("user-name");
+      const currentAvatarIcon = document.getElementById("current-avatar-icon");
+      const currentAvatarName = document.getElementById("current-avatar-name");
+
+      document.getElementById("back-btn").addEventListener("click", () => {
+        window.location.href = "./interface.html";
+      });
+
+      if (!userId) {
+        alert("請先登入");
+        window.location.href = "./login.html";
+      }
+
+      function setCurrentAvatar(avatar) {
+        const icon = avatar?.image_url || "account_circle";
+        currentAvatarIcon.textContent = icon;
+        currentAvatarName.textContent = avatar?.item_name || "尚未裝備頭像";
+        localStorage.setItem("avatar_icon", icon);
+      }
+
+      function renderItems(items) {
+        shopList.innerHTML = "";
+
+        if (!items.length) {
+          shopList.innerHTML = '<p class="text-sm font-bold text-on-muted">目前沒有可購買的商品。</p>';
+          return;
+        }
+
+        items.forEach((item) => {
+          const product = document.createElement("article");
+          product.className =
+            "rounded-lg border border-outline bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+
+          const actionLabel = item.is_equipped
+            ? "已裝備"
+            : item.is_owned
+              ? "裝備"
+              : `購買 ${item.price}`;
+
+          const actionDisabled = item.is_equipped ? "disabled" : "";
+          const actionIcon = item.is_owned ? "check_circle" : "shopping_bag";
+
+          product.innerHTML = `
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-outline bg-surface-low text-primary">
+                <span class="material-symbols-outlined text-4xl">${item.image_url || "account_circle"}</span>
+              </div>
+              <span class="rounded-full bg-surface-high px-3 py-1 text-xs font-extrabold text-primary">${item.is_owned ? "已擁有" : `${item.price} coins`}</span>
+            </div>
+            <h2 class="mt-4 text-lg font-extrabold">${item.item_name}</h2>
+            <p class="mt-2 min-h-10 text-sm font-medium leading-5 text-on-muted">${item.description || ""}</p>
+            <button
+              class="shop-action mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-extrabold text-white transition hover:bg-[#005c3b] disabled:cursor-not-allowed disabled:bg-outline disabled:text-on-surface"
+              data-item-id="${item.item_id}"
+              data-owned="${item.is_owned ? "true" : "false"}"
+              type="button"
+              ${actionDisabled}
+            >
+              <span class="material-symbols-outlined text-xl">${actionIcon}</span>
+              <span>${actionLabel}</span>
+            </button>
+          `;
+
+          shopList.appendChild(product);
+        });
+
+        document.querySelectorAll(".shop-action").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const itemId = Number(button.dataset.itemId);
+            const owned = button.dataset.owned === "true";
+
+            if (owned) {
+              await equipAvatar(itemId);
+            } else {
+              await purchaseAvatar(itemId);
+            }
+          });
+        });
+      }
+
+      async function loadShop() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/shop/${Number(userId)}`);
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Load shop failed");
+          }
+
+          coinBalance.textContent = data.user.coin_balance;
+          userName.textContent = data.user.user_name || "使用者";
+          setCurrentAvatar(data.equippedAvatar);
+          renderItems(data.items || []);
+        } catch (error) {
+          console.error("商店載入失敗:", error);
+          shopList.innerHTML = '<p class="text-sm font-bold text-red-700">商店載入失敗，請確認後端 /shop API 是否啟動。</p>';
+        }
+      }
+
+      async function purchaseAvatar(itemId) {
+        const response = await fetch(`${API_BASE_URL}/shop/${Number(userId)}/purchase`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: itemId }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          alert(data.message || "購買失敗");
+          return;
+        }
+
+        await loadShop();
+      }
+
+      async function equipAvatar(itemId) {
+        const response = await fetch(`${API_BASE_URL}/shop/${Number(userId)}/equip`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: itemId }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          alert(data.message || "裝備失敗");
+          return;
+        }
+
+        setCurrentAvatar(data.avatar);
+        await loadShop();
+      }
+
+      loadShop();
+    </script>
+  </body>
+</html>

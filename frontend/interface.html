@@ -1,380 +1,840 @@
 <!doctype html>
 
 <html class="light" lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Atrium Interactive Experience</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-      rel="stylesheet"
-    />
-    <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: "#006944",
-              "primary-dim": "#005c3b",
-              surface: "#d9ffee",
-              "surface-container-low": "#c0fee5",
-              "surface-container-lowest": "#ffffff",
-              "surface-container-high": "#a9f1d6",
-              "on-surface": "#003629",
-              "on-surface-variant": "#306554",
-              outline: "#4c816e",
-              "outline-variant": "#82b8a4",
-            },
-            borderRadius: {
-              DEFAULT: "0.25rem",
-              lg: "0.5rem",
-              xl: "0.75rem",
-              full: "9999px",
-            },
-            fontFamily: {
-              headline: ["Inter"],
-              body: ["Inter"],
-              label: ["Inter"],
-            },
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Atrium Interactive Experience</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#006944",
+            "primary-dim": "#005c3b",
+            surface: "#d9ffee",
+            "surface-container-low": "#c0fee5",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#a9f1d6",
+            "on-surface": "#003629",
+            "on-surface-variant": "#306554",
+            outline: "#4c816e",
+            "outline-variant": "#82b8a4",
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px",
+          },
+          fontFamily: {
+            headline: ["Inter"],
+            body: ["Inter"],
+            label: ["Inter"],
           },
         },
-      };
-    </script>
-    <style>
-      .material-symbols-outlined {
-        font-variation-settings:
-          "FILL" 0,
-          "wght" 400,
-          "GRAD" 0,
-          "opsz" 24;
-      }
+      },
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        "FILL" 0,
+        "wght" 400,
+        "GRAD" 0,
+        "opsz" 24;
+    }
 
-      /* Spring Animation for Button Interaction */
-      .btn-spring-active:active {
-        transform: scale(0.95);
-        background-color: #ffffff !important;
-        color: #006944 !important;
-        transition: none;
-      }
+    /* Spring Animation for Button Interaction */
+    .btn-spring-active:active {
+      transform: scale(0.95);
+      background-color: #ffffff !important;
+      color: #006944 !important;
+      transition: none;
+    }
 
-      .btn-spring-return {
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
+    .btn-spring-return {
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
 
-      /* Airy background aesthetic */
-      .atrium-mesh {
-        background-color: #d9ffee;
-        background-image:
-          radial-gradient(at 0% 0%, #c0fee5 0px, transparent 50%),
-          radial-gradient(at 100% 0%, #7efdbe 0px, transparent 50%),
-          radial-gradient(at 100% 100%, #c0fee5 0px, transparent 50%),
-          radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
-      }
+    /* Airy background aesthetic */
+    .atrium-mesh {
+      background-color: #d9ffee;
+      background-image:
+        radial-gradient(at 0% 0%, #c0fee5 0px, transparent 50%),
+        radial-gradient(at 100% 0%, #7efdbe 0px, transparent 50%),
+        radial-gradient(at 100% 100%, #c0fee5 0px, transparent 50%),
+        radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+    }
 
-      body {
-        min-height: 100dvh;
-      }
+    body {
+      min-height: 100dvh;
+    }
 
-      /* String List Animation Styles */
-      .string-item {
-        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        opacity: 1;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 1rem;
-      }
+    /* String List Animation Styles */
+    .string-item {
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 1;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
 
-      /* Custom Scrollbar */
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
 
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
 
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #4c816e;
-        border-radius: 10px;
-      }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #4c816e;
+      border-radius: 10px;
+    }
 
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #006944;
-      }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #006944;
+    }
 
-      .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: #4c816e transparent;
-        mask-image: linear-gradient(
-          to bottom,
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #4c816e transparent;
+      mask-image: linear-gradient(to bottom,
           transparent,
           black 10%,
           black 95%,
-          transparent
+          transparent);
+    }
+
+    .string-hover-effect:hover {
+      transform: scale(1.05);
+      cursor: pointer;
+    }
+
+    @keyframes pop-up {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.15);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .animate-pop-up {
+      animation: pop-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Sidebar transitions */
+    #sidebar {
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar.closed {
+      transform: translateX(-100%);
+    }
+      /* 使用者卡片外觀區：由後端 /level API 回傳的 currentFrame 動態控制。
+         --frame-border / --frame-glow / --frame-bg 會在 applyUserProfile() 裡被 setProperty 更新，
+         所以資料庫 AvatarFrame 的顏色與 CSS 背景可以直接影響右上角使用者卡片。 */
+      #user-box {
+        --frame-border: #82b8a4;
+        --frame-glow: rgba(0, 105, 68, 0.18);
+        --frame-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(192, 254, 229, 0.82)
         );
+        background: var(--frame-bg);
+        border-color: var(--frame-border);
+        box-shadow: 0 10px 28px var(--frame-glow);
       }
 
-      .string-hover-effect:hover {
-        transform: scale(1.05);
-        cursor: pointer;
-      }
+    #sidebar-overlay {
+      transition: opacity 0.4s ease;
+    }
 
-      @keyframes pop-up {
-        0% {
-          transform: scale(1);
-        }
 
-        50% {
-          transform: scale(1.15);
-        }
+  #sidebar-overlay.closed {
+  opacity: 0;
+  pointer-events: none;
+}
 
-        100% {
-          transform: scale(1);
-        }
-      }
+#user-box::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--frame-border);
+  border-radius: 1.1rem;
+  opacity: 0.55;
+  pointer-events: none;
+}
 
-      .animate-pop-up {
-        animation: pop-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
+#avatar-frame {
+  border-color: var(--frame-border);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.55),
+    0 0 18px var(--frame-glow);
+}
 
-      /* Sidebar transitions */
-      #sidebar {
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      }
+#user-title {
+  color: var(--frame-border);
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.75);
+}
+</style>
+</head>
 
-      #sidebar.closed {
-        transform: translateX(-100%);
-      }
+<body class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col overflow-hidden">
+  <!-- Sidebar Overlay -->
+  <div class="fixed inset-0 bg-black/20 z-40 closed backdrop-blur-sm" id="sidebar-overlay"></div>
 
-      #sidebar-overlay {
-        transition: opacity 0.4s ease;
-      }
+  <!-- Sidebar -->
+  <aside
+    class="fixed top-0 left-0 h-full w-80 bg-surface-container-lowest/90 backdrop-blur-xl z-50 closed shadow-2xl border-r border-outline-variant/30 flex flex-col p-6"
+    id="sidebar">
+    <div class="flex items-center justify-between mb-12">
+      <h2 class="text-2xl font-extrabold text-primary">選單</h2>
+      <button
+        class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors"
+        id="close-sidebar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
 
-      #sidebar-overlay.closed {
-        opacity: 0;
-        pointer-events: none;
-      }
-    </style>
-  </head>
+    <nav class="flex flex-col gap-4">
+      <button
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>選擇模板</span>
+      </button>
 
-  <body
-    class="font-body text-on-surface atrium-mesh min-h-screen flex flex-col overflow-hidden"
-  >
-    <!-- Sidebar Overlay -->
-    <div
-      class="fixed inset-0 bg-black/20 z-40 closed backdrop-blur-sm"
-      id="sidebar-overlay"
-    ></div>
-    <!-- Sidebar -->
-    <aside
-      class="fixed top-0 left-0 h-full w-80 bg-surface-container-lowest/90 backdrop-blur-xl z-50 closed shadow-2xl border-r border-outline-variant/30 flex flex-col p-6"
-      id="sidebar"
-    >
-      <div class="flex items-center justify-between mb-12">
-        <h2 class="text-2xl font-extrabold text-primary">選單</h2>
-        <button
-          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors"
-          id="close-sidebar"
-        >
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      <nav class="flex flex-col gap-4">
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>選擇模板</span>
-        </button>
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>我的等級</span>
-        </button>
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>我的成就</span>
-        </button>
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>檢舉</span>
-        </button>
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>論壇</span>
-        </button>
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>商店</span>
-        </button>
-      </nav>
-    </aside>
-    <!-- Main Content -->
-    <main
-      class="flex-grow flex flex-col items-center justify-end px-8 text-center relative pb-[10vh]"
-    >
-      <!-- Top-Left Menu Icon -->
-      <div class="absolute top-8 left-8 z-30">
-        <button
-          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant w-12 h-12 rounded-xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant group"
-          id="menu-toggle"
-        >
-          <span class="material-symbols-outlined text-3xl">menu</span>
-        </button>
-      </div>
-      <!-- Top-Center Motto Box -->
+      <button
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>我的等級</span>
+      </button>
+
+      <button
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>我的成就</span>
+      </button>
+
+      <button
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>檢舉</span>
+      </button>
+
+      <button
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>論壇</span>
+      </button>
+
+      <button
+        id="shop-sidebar-btn"
+        class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span>商店</span>
+      </button>
+
+      <button
+        id="logout-btn"
+        class="group relative w-full py-4 bg-white/90 border border-outline-variant text-primary font-bold text-lg rounded-2xl shadow-md hover:bg-surface-container-high btn-spring-return btn-spring-active flex items-center justify-center gap-3">
+        <span class="material-symbols-outlined">logout</span>
+        <span>登出</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-grow flex flex-col items-center justify-end px-8 text-center relative pb-[10vh]">
+    <!-- Top-Left Menu Icon -->
+    <div class="absolute top-8 left-8 z-30">
+      <button
+        class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant w-12 h-12 rounded-xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant group"
+        id="menu-toggle">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+
+    <!-- Top-Center Motto Box -->
+    <div class="absolute top-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[900px] px-4">
       <div
-        class="absolute top-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[280px] sm:max-w-xs px-4"
-      >
-        <div
-          class="bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-4 shadow-lg flex flex-col min-h-[80px] items-start text-left"
-        >
-          <span
-            class="text-primary/70 text-[10px] font-bold uppercase tracking-widest"
-            >今天的至理名言</span
-          >
-          <!-- Empty area for the motto content as requested -->
-          <div
-            class="w-full h-4 bg-surface-container-high/20 rounded-full animate-pulse hidden"
-          ></div>
+        class="bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl px-6 py-3 shadow-lg flex flex-col min-h-[64px] items-start text-left">
+        <span class="text-primary/70 text-[10px] font-bold uppercase tracking-widest">今天的至理名言</span>
+        <p id="today-motto-content" class="mt-2 text-primary text-base font-extrabold leading-snug">
+          尚未置頂亂語
+        </p>
+        <div class="w-full h-4 bg-surface-container-high/20 rounded-full animate-pulse hidden"></div>
+      </div>
+    </div>
+
+    <!-- Top-Right User Box -->
+    <div class="absolute top-8 right-8 z-30">
+      <button
+        class="relative min-w-[230px] border px-4 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 text-on-surface-variant group"
+        id="user-box">
+        <span
+          class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
+          id="avatar-frame">
+          <span class="material-symbols-outlined text-3xl">account_circle</span>
+        </span>
+
+        <span class="flex flex-col items-start leading-tight text-left">
+          <span class="flex items-center gap-2">
+            <span class="font-extrabold text-base text-on-surface" id="user-name">username</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary" id="user-level">
+              Lv.1
+            </span>
+          </span>
+          <span class="text-xs font-bold tracking-wide" id="user-title">無名生成者</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Floating Glass Accents -->
+    <div class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary-container/20 rounded-full blur-[100px] -z-10">
+    </div>
+    <div class="absolute bottom-1/4 right-1/4 w-[35rem] h-[35rem] bg-white/40 rounded-full blur-[100px] -z-10"></div>
+    <div class="absolute top-10 right-10 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] -z-10"></div>
+    <div class="w-full max-w-lg relative flex flex-col items-center">
+      <!-- Scrollable String Container Wrap -->
+      <div class="w-full max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse px-4 py-8 mb-4"
+        id="scroll-container">
+        <!-- Strings will be injected here into this internal div -->
+        <div class="flex flex-col items-center w-full" id="string-carousel">
+          <!-- Items appear here -->
         </div>
+
+       </div>
+
+      <!-- Huge Interactive Primary Button -->
+      <button
+        class="group relative w-full py-8 bg-primary text-on-primary font-extrabold text-3xl rounded-full shadow-[0px_16px_48px_rgba(0,54,41,0.15)] hover:shadow-[0px_20px_56px_rgba(0,54,41,0.2)] btn-spring-return btn-spring-active flex items-center justify-center gap-6 active:shadow-sm z-20"
+        id="interactive-btn">
+        <span>生成亂語</span>
+        <span class="material-symbols-outlined text-4xl" data-icon="touch_app">touch_app</span>
+      </button>
+    </div>
+
+    <!-- Template Selector Panel -->
+    <section id="template-panel"
+      class="absolute right-8 bottom-8 z-30 w-72 rounded-3xl border border-outline-variant/40 bg-surface-container-lowest/80 backdrop-blur-xl shadow-2xl p-4 text-left">
+      <div class="mb-3">
+        <h3 class="text-primary font-extrabold text-lg">選擇模板</h3>
+        <p class="text-on-surface-variant text-xs mt-1">
+          選好模板後，按中間的生成亂語按鈕產生亂語
+        </p>
+
       </div>
-      <!-- Top-Right User Box -->
-      <div class="absolute top-8 right-8 z-30">
-        <button
-          class="bg-surface-container-high/80 backdrop-blur-md border border-outline-variant px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-300 text-on-surface-variant font-medium text-sm group"
-          id="user-box"
-        >
-          <span class="material-symbols-outlined text-xl">account_circle</span>
-          <span>用戶名：username</span>
-        </button>
+
+      <div id="selected-template-label"
+        class="mb-3 rounded-xl bg-surface-container-high/60 px-3 py-2 text-xs font-bold text-primary">
+        尚未選擇模板
       </div>
-      <!-- Floating Glass Accents -->
-      <div
-        class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary-container/20 rounded-full blur-[100px] -z-10"
-      ></div>
-      <div
-        class="absolute bottom-1/4 right-1/4 w-[35rem] h-[35rem] bg-white/40 rounded-full blur-[100px] -z-10"
-      ></div>
-      <div
-        class="absolute top-10 right-10 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] -z-10"
-      ></div>
-      <div class="w-full max-w-lg relative flex flex-col items-center">
-        <!-- Scrollable String Container Wrap -->
-        <div
-          class="w-full max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse px-4 py-8 mb-4"
-          id="scroll-container"
-        >
-          <!-- Strings will be injected here into this internal div -->
-          <div class="flex flex-col items-center w-full" id="string-carousel">
-            <!-- Items appear here -->
-          </div>
-        </div>
-        <!-- Huge Interactive Primary Button -->
-        <button
-          class="group relative w-full py-8 bg-primary text-on-primary font-extrabold text-3xl rounded-full shadow-[0px_16px_48px_rgba(0,54,41,0.15)] hover:shadow-[0px_20px_56px_rgba(0,54,41,0.2)] btn-spring-return btn-spring-active flex items-center justify-center gap-6 active:shadow-sm z-20"
-          id="interactive-btn"
-        >
-          <span>互動按鈕</span>
-          <span class="material-symbols-outlined text-4xl" data-icon="touch_app"
-            >touch_app</span
-          >
-        </button>
+
+      <div id="template-list" class="custom-scrollbar max-h-56 overflow-y-auto pr-2 flex flex-col gap-3">
+        <p class="text-sm text-on-surface-variant">模板載入中...</p>
       </div>
-    </main>
-    <script>
+    </section>
+  </main>
+
+  <script>
+
+      const API_BASE_URL = "http://localhost:3000";
+      const currentUserId = localStorage.getItem("user_id");
+
+      if (!currentUserId) {
+        alert("請先登入");
+        window.location.href = "./login.html";
+      }
+
       const btn = document.getElementById("interactive-btn");
       const container = document.getElementById("string-carousel");
       const scrollContainer = document.getElementById("scroll-container");
-      const sequence = ["a", "b", "c"];
-      let currentIndex = 0;
+      const mottoContent = document.getElementById("today-motto-content");
 
-      btn.addEventListener("click", () => {
-        const char = sequence[currentIndex];
-        currentIndex = (currentIndex + 1) % sequence.length;
+      function setTodayMotto(gibberish) {
+        if (!mottoContent) {
+          return;
+        }
+
+        if (!gibberish) {
+          mottoContent.textContent = "尚未置頂亂語";
+          return;
+        }
+
+        mottoContent.textContent = gibberish.content;
+      }
+
+      async function loadPinnedGibberish() {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/gibberish/pinned?user_id=${Number(currentUserId)}`,
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to load pinned gibberish");
+          }
+
+          const data = await response.json();
+
+          setTodayMotto(data.pinnedGibberish);
+        } catch (error) {
+          console.error("載入置頂亂語失敗:", error);
+        }
+      }
+
+      async function pinGibberish(gibberishId, content, pinBtn) {
+        if (!gibberishId) {
+          alert(
+            "這筆亂語沒有 gibberish_id，請確認後端 /gibberish/generate 有回傳 gibberish_id",
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/gibberish/pin`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: Number(currentUserId),
+              gibberish_id: Number(gibberishId),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to pin gibberish");
+          }
+
+          const data = await response.json();
+
+          setTodayMotto(data.pinnedGibberish || { content });
+
+          document.querySelectorAll(".pin-btn").forEach((button) => {
+            button.classList.remove("bg-primary", "text-white");
+            button.classList.add("bg-surface-container-high", "text-primary");
+          });
+
+          pinBtn.classList.remove("bg-surface-container-high", "text-primary");
+          pinBtn.classList.add("bg-primary", "text-white");
+        } catch (error) {
+          console.error("置頂亂語失敗:", error);
+          alert("置頂亂語失敗，請確認後端 POST /gibberish/pin 是否正常");
+        }
+      }
+
+
+    // 將後端 /level/:userId 回傳的 profile 套到右上角使用者卡片。
+    // 這裡只負責前端呈現：名稱、等級、稱號文字，以及頭像框的 CSS 變數。
+    function applyUserProfile(profile) {
+      const userName = document.getElementById("user-name");
+      const userLevel = document.getElementById("user-level");
+      const userTitle = document.getElementById("user-title");
+      const frame = profile.currentFrame;
+      
+
+
+        userName.textContent = profile.user.name || "username";
+      userLevel.textContent = `Lv.${profile.user.level}`;
+      userTitle.textContent = profile.currentTitle.title_name || "無名生成者";
+
+      userBox.style.setProperty(
+        "--frame-border",
+        frame.border_color || "#82b8a4",
+      );
+      userBox.style.setProperty(
+        "--frame-glow",
+        frame.glow_color || "rgba(0, 105, 68, 0.18)",
+      );
+      userBox.style.setProperty(
+        "--frame-bg",
+        frame.background_css ||
+          "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(192,254,229,0.82))",
+      );
+    }
+
+    // 頁面載入時呼叫：讀取目前使用者的等級資料，並讓後端順便同步稱號與頭像框。
+    async function loadUserProfile() {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/level/${currentUserId}`,
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          applyUserProfile(data.profile);
+        }
+      } catch (error) {
+        console.warn("Level profile is not ready yet:", error);
+      }
+    }
+
+    function applyEquippedAvatar(avatar) {
+      const avatarIcon = document.querySelector("#avatar-frame .material-symbols-outlined");
+      const iconName = avatar?.image_url || localStorage.getItem("avatar_icon") || "account_circle";
+      avatarIcon.textContent = iconName;
+      localStorage.setItem("avatar_icon", iconName);
+    }
+
+    async function loadEquippedAvatar() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/shop/${currentUserId}/equipped-avatar`);
+        const data = await response.json();
+
+        if (data.success) {
+          applyEquippedAvatar(data.avatar);
+        }
+      } catch (error) {
+        console.warn("Equipped avatar is not ready yet:", error);
+        applyEquippedAvatar(null);
+      }
+    }
+
+    // 每成功生成一次內容後呼叫：通知後端 generation_count +1，
+    // 後端會重新計算 level、發放符合條件的獎勵，最後回傳最新 profile。
+    async function recordGeneration() {
+      try {
+        const response = await fetch(`http://localhost:3000/level/${currentUserId}/generation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await response.json();
+
+
+           if (data.success) {
+            applyUserProfile(data.profile);
+          }
+        } catch (error) {
+          console.warn("Level profile is not ready yet:", error);
+        }
+      }
+
+
+
+
+    const templateList = document.getElementById("template-list");
+    const selectedTemplateLabel = document.getElementById(
+      "selected-template-label",
+    );
+
+
+    let selectedTemplateId = null;
+
+    const savedUserName = localStorage.getItem("user_name");
+    const userNameText = document.getElementById("user-name-text");
+
+    if (savedUserName && userNameText) {
+      userNameText.textContent = `用戶名：${savedUserName}`;
+    }
+
+
+      function renderGibberishCard(gibberish, options = {}) {
+        const shouldRecordGeneration =
+          typeof options === "boolean"
+            ? options
+            : Boolean(options.shouldRecordGeneration);
+
+        const content =
+          typeof gibberish === "string" ? gibberish : gibberish.content;
+
+
+      const gibberishId =
+        typeof gibberish === "string" ? null : gibberish.gibberish_id;
 
         const wrapper = document.createElement("div");
+        const isPinned =
+          typeof gibberish !== "string" && Boolean(gibberish.pinned);
         wrapper.className =
           "string-item pointer-events-auto flex items-center justify-center gap-3 string-hover-effect";
 
-        wrapper.innerHTML = `
-            <div class="bg-white px-8 py-4 rounded-2xl shadow-lg border border-white/50 flex items-center justify-center min-w-[80px]">
-                <span class="text-3xl font-extrabold text-primary">${char}</span>
-            </div>
-            <button class="pin-btn bg-secondary w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg hover:bg-primary transition-colors duration-200">
-                <span class="material-symbols-outlined text-2xl">push_pin</span>
-            </button>
-        `;
+      if (gibberishId) {
+        wrapper.dataset.gibberishId = gibberishId;
+      }
 
-        const pinBtn = wrapper.querySelector(".pin-btn");
-        pinBtn.addEventListener("click", (e) => {
+      wrapper.innerHTML = `
+      <div class="bg-white px-8 py-4 rounded-2xl shadow-lg border border-white/50 flex items-center justify-center min-w-[80px]">
+        <span class="text-3xl font-extrabold text-primary">${content}</span>
+      </div>
+
+      <button class="pin-btn ${
+        isPinned
+          ? "bg-primary text-white"
+          : "bg-surface-container-high text-primary"
+      } w-14 h-14 rounded-xl flex items-center justify-center shadow-lg hover:bg-primary hover:text-white transition-colors duration-200">
+  <span class="material-symbols-outlined text-2xl">push_pin</span>
+</button>
+`;
+
+      const pinBtn = wrapper.querySelector(".pin-btn");
+
+        pinBtn.addEventListener("click", async (e) => {
           e.stopPropagation();
-          pinBtn.classList.remove("animate-pop-up");
-          void pinBtn.offsetWidth;
-          pinBtn.classList.add("animate-pop-up");
+
+        pinBtn.classList.remove("animate-pop-up");
+        void pinBtn.offsetWidth;
+        pinBtn.classList.add("animate-pop-up");
+
+          await pinGibberish(gibberishId, content, pinBtn);
         });
 
-        container.appendChild(wrapper);
+      container.appendChild(wrapper);
 
-        requestAnimationFrame(() => {
-          scrollContainer.scrollTo({
-            top: scrollContainer.scrollHeight,
-            behavior: "smooth",
-          });
+        // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
+        if (shouldRecordGeneration) {  
+          recordGeneration();
+        }
+
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: "smooth",
         });
       });
+    }
+
+       async function loadMyGibberishes() {
+      const userId = localStorage.getItem("user_id");
+
+      if (!userId) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/gibberish/my?user_id=${Number(userId)}`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load my gibberishes");
+        }
+
+        const gibberishes = await response.json();
+
+        container.innerHTML = "";
+
+        gibberishes.forEach((gibberish) => {
+          renderGibberishCard(gibberish, false);
+        });
+      } catch (error) {
+        console.error("載入我的亂語失敗:", error);
+      }
+    }
+
+    async function loadTemplates() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/gibberish/templates`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load templates");
+        }
+
+        const data = await response.json();
+
+        const templates = Array.isArray(data) ? data : data.templates;
+
+        if (!Array.isArray(templates)) {
+          throw new Error("Template data format is wrong");
+        }
+
+        renderTemplates(templates);
+      } catch (error) {
+        console.error("載入模板失敗:", error);
+
+        templateList.innerHTML = `
+        <p class="text-sm text-red-700 font-bold">
+          模板載入失敗，請確認後端 GET /gibberish/templates 有開啟
+        </p>
+      `;
+      }
+    }
+
+    function renderTemplates(templates) {
+      templateList.innerHTML = "";
+
+      const baseClass =
+        "template-card w-full text-left rounded-2xl border px-4 py-3 transition-all duration-200 cursor-pointer";
+
+      const normalClass =
+        baseClass +
+        " bg-white/70 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/70";
+
+      const activeClass =
+        baseClass + " bg-primary border-primary text-white shadow-lg";
+
+      templates.forEach((template, index) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = normalClass;
+
+        item.innerHTML = `
+        <div class="font-extrabold text-sm">
+          ${template.template_name}
+        </div>
+        <div class="text-xs opacity-80 mt-1">
+          ${template.structure}
+        </div>
+      `;
+
+        item.addEventListener("click", () => {
+          selectedTemplateId = template.template_id;
+
+          document.querySelectorAll(".template-card").forEach((card) => {
+            card.className = normalClass;
+          });
+
+          item.className = activeClass;
+
+          selectedTemplateLabel.textContent = `已選擇：${template.template_name}`;
+
+          console.log("目前選到的 template_id:", selectedTemplateId);
+        });
+
+        templateList.appendChild(item);
+
+        if (index === 0) {
+          item.click();
+        }
+      });
+    }
+
+       btn.addEventListener("click", async () => {
+      if (!selectedTemplateId) {
+        alert("請先選擇一個模板");
+        return;
+      }
+
+      try {
+        const userId = localStorage.getItem("user_id");
+
+        if (!userId) {
+          alert("請先登入");
+          window.location.href = "./login.html";
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/gibberish/generate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            template_id: selectedTemplateId,
+            user_id: Number(userId),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate gibberish");
+        }
+
+        const data = await response.json();
+
+        console.log("後端回傳資料:", data);
+
+        const newGibberish = data.gibberish || data.result || data;
+        const content = newGibberish.content;
+        const gibberishId = newGibberish.gibberish_id;
+
+        if (!content) {
+          throw new Error("後端沒有回傳 content");
+        }
+
+        if (!gibberishId) {
+          throw new Error("後端沒有回傳 gibberish_id");
+        }
+
+        renderGibberishCard(newGibberish, true);
+      } catch (error) {
+        console.error("產生亂語失敗:", error);
+        alert("產生亂語失敗，請確認後端 POST /gibberish/generate 是否正常");
+      }
+    });
+
 
       const userBox = document.getElementById("user-box");
+
       userBox.addEventListener("click", () => {
         userBox.classList.remove("animate-pop-up");
         void userBox.offsetWidth;
         userBox.classList.add("animate-pop-up");
       });
 
-      // Sidebar Logic
-      const menuToggle = document.getElementById("menu-toggle");
-      const sidebar = document.getElementById("sidebar");
-      const sidebarOverlay = document.getElementById("sidebar-overlay");
-      const closeSidebar = document.getElementById("close-sidebar");
+      const logoutBtn = document.getElementById("logout-btn");
 
-      const toggleSidebar = () => {
-        const isOpen = !sidebar.classList.contains("closed");
-        if (isOpen) {
-          sidebar.classList.add("closed");
-          sidebarOverlay.classList.add("closed");
-        } else {
-          sidebar.classList.remove("closed");
-          sidebarOverlay.classList.remove("closed");
+      logoutBtn.addEventListener("click", () => {
+        const confirmLogout = confirm("確定要登出嗎?");
 
-          // Pop up animation for the hamburger icon when clicked
-          menuToggle.classList.remove("animate-pop-up");
-          void menuToggle.offsetWidth;
-          menuToggle.classList.add("animate-pop-up");
+        if (confirmLogout) {
+          localStorage.removeItem("user_id");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("user_name");
+
+          window.location.href = "./login.html";
         }
-      };
-
-      menuToggle.addEventListener("click", toggleSidebar);
-      closeSidebar.addEventListener("click", toggleSidebar);
-      sidebarOverlay.addEventListener("click", toggleSidebar);
-
-      // Sidebar button effects
-      const sidebarBtns = document.querySelectorAll(".sidebar-btn");
-      sidebarBtns.forEach((sbBtn) => {
-        sbBtn.addEventListener("click", () => {
-          // They already have btn-spring-active class in HTML,
-          // so CSS :active handles the shrink/white effect.
-        });
       });
-    </script>
-  </body>
+
+
+    // 初次進入頁面時先抓一次 profile，讓右上角使用者卡片不是停在預設值。
+    loadUserProfile();
+
+    // Sidebar Logic
+
+    const menuToggle = document.getElementById("menu-toggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
+    const closeSidebar = document.getElementById("close-sidebar");
+    const shopSidebarBtn = document.getElementById("shop-sidebar-btn");
+
+    const toggleSidebar = () => {
+      const isOpen = !sidebar.classList.contains("closed");
+
+      if (isOpen) {
+        sidebar.classList.add("closed");
+        sidebarOverlay.classList.add("closed");
+      } else {
+        sidebar.classList.remove("closed");
+        sidebarOverlay.classList.remove("closed");
+
+        menuToggle.classList.remove("animate-pop-up");
+        void menuToggle.offsetWidth;
+        menuToggle.classList.add("animate-pop-up");
+      }
+    };
+
+    menuToggle.addEventListener("click", toggleSidebar);
+    closeSidebar.addEventListener("click", toggleSidebar);
+    sidebarOverlay.addEventListener("click", toggleSidebar);
+    shopSidebarBtn.addEventListener("click", () => {
+      window.location.href = "./shop.html";
+    });
+
+    const sidebarBtns = document.querySelectorAll(".sidebar-btn");
+
+    sidebarBtns.forEach((sbBtn) => {
+      sbBtn.addEventListener("click", () => {
+        // Sidebar button click effect is handled by CSS
+      });
+    });
+
+    loadTemplates();
+    loadMyGibberishes();
+    loadPinnedGibberish();
+    loadEquippedAvatar();
+  </script>
+</body>
 </html>
+
+   
