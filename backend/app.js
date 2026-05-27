@@ -12,6 +12,7 @@ import loginRoutes from "./features/login.js"; //之後開發好的功能就impo
 import gibberishRoutes from "./features/gibberish.js";
 
 import levelRoutes from "./features/level.js"; // level / title / avatar frame routes
+import reportRoutes from "./features/report.js"; // report / like / forum ranking routes
 
 const app = express();
 
@@ -35,12 +36,41 @@ app.use((req, res, next) => {
     "GET, POST, PUT, DELETE, OPTIONS",
   );
 
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
   next();
 });
 
 app.use("/user", loginRoutes); ////用到功能的middleware
 app.use("/gibberish", gibberishRoutes);
 app.use("/level", levelRoutes); //// 等級、稱號、頭像框功能
+app.use("/report", reportRoutes);
+
+app.get("/forum", async (req, res) => {
+  try {
+    const [rows] = await mysqlConnectionPool.query(`
+      SELECT
+        g.gibberish_id,
+        g.content,
+        g.created_at,
+        u.user_name
+      FROM Gibberish g
+      JOIN User u ON g.user_id = u.user_id
+      WHERE g.pinned = 1
+      ORDER BY g.created_at DESC
+    `);
+
+    return res.json(rows);
+  } catch (error) {
+    console.error("Failed to get forum posts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get forum posts",
+    });
+  }
+});
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
