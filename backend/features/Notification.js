@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET: 取得使用者的通知列表
 router.get("/", async (req, res) => {
-  const userId = req.query.user_id || 101; 
+  const userId = req.query.user_id || 101;
 
   try {
     const [rows] = await mysqlConnectionPool.query(
@@ -19,11 +19,12 @@ router.get("/", async (req, res) => {
         gibberish_id
        FROM Notification 
        WHERE user_id = ? 
+        AND content NOT LIKE 'PINLOG:%'
        ORDER BY created_time DESC`,
-      [userId]
+      [userId],
     );
 
-    const formattedData = rows.map(notification => {
+    const formattedData = rows.map((notification) => {
       const upperType = notification.type.toUpperCase();
       let defaultTitle = "📢 系統通知";
       if (upperType === "LIKE") defaultTitle = "👍 有人懂你的幽默！";
@@ -34,15 +35,20 @@ router.get("/", async (req, res) => {
         type: upperType,
         title: defaultTitle,
         isRead: Boolean(notification.isRead),
-        createdAt: new Date(notification.createdAt).toLocaleDateString("zh-TW")
+        createdAt: new Date(notification.createdAt).toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
     });
 
     res.json({
       success: true,
-      data: formattedData
+      data: formattedData,
     });
-
   } catch (error) {
     console.error("撈取資料庫通知失敗:", error);
     res.status(500).json({ success: false, message: "資料庫連線錯誤" });
@@ -56,7 +62,7 @@ router.patch("/:id/read", async (req, res) => {
   try {
     const [result] = await mysqlConnectionPool.query(
       "UPDATE Notification SET is_read = TRUE WHERE notification_id = ?",
-      [notificationId]
+      [notificationId],
     );
 
     if (result.affectedRows > 0) {
@@ -77,7 +83,7 @@ router.patch("/:id/unread", async (req, res) => {
   try {
     const [result] = await mysqlConnectionPool.query(
       "UPDATE Notification SET is_read = FALSE WHERE notification_id = ?",
-      [notificationId]
+      [notificationId],
     );
 
     if (result.affectedRows > 0) {
@@ -98,7 +104,7 @@ router.patch("/read-all", async (req, res) => {
   try {
     await mysqlConnectionPool.query(
       "UPDATE Notification SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE",
-      [userId]
+      [userId],
     );
 
     res.json({ success: true, message: "全部標記已讀成功" });

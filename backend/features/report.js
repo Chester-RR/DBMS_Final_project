@@ -3,416 +3,258 @@ import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
 
-async function ensureLikeTable() {
-  await mysqlConnectionPool.query(`
-    CREATE TABLE IF NOT EXISTS GibberishLike (
-      gibberish_like_id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      gibberish_id INT NOT NULL,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-      CONSTRAINT uq_gibberishlike_user_gibberish
-        UNIQUE (user_id, gibberish_id),
-
-      CONSTRAINT fk_gibberishlike_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-      CONSTRAINT fk_gibberishlike_gibberish
-        FOREIGN KEY (gibberish_id) REFERENCES Gibberish(gibberish_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-    ) ENGINE=InnoDB
-  `);
-}
-
-async function getAdminUser(userId) {
+/* =========================
+   錨點 1：檢查是否為管理員
+========================= */
+async function checkIsAdmin(userId) {
   const [users] = await mysqlConnectionPool.query(
-    "SELECT user_id, admin FROM User WHERE user_id = ? LIMIT 1",
+    `
+    SELECT admin
+    FROM User
+    WHERE user_id = ?
+    `,
     [userId],
   );
 
-  const user = users[0];
-  if (!user || Number(user.admin) !== 1) return null;
-  return user;
+  if (users.length === 0) {
+    return false;
+  }
+
+  return Number(users[0].admin) === 1;
 }
 
-router.post("/", async (req, res) => {
-  const { reporter_id, gibberish_id, reason } = req.body;
-
-  if (!reporter_id) {
-    return res.status(401).json({
-      success: false,
-      message: "Please log in before reporting",
-    });
-  }
-
-  if (!gibberish_id || !reason || !String(reason).trim()) {
-    return res.status(400).json({
-      success: false,
-      message: "gibberish_id and reason are required",
-    });
-  }
-
+/* =========================
+   錨點 2：一般使用者送出檢舉
+   POST /report/gibberish
+========================= */
+router.post("/gibberish", async (req, res) => {
   try {
-    const [result] = await mysqlConnectionPool.query(
+    const { user_id, gibberish_id, reason } = req.body;
+
+    if (!user_id || !gibberish_id || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "缺少 user_id、gibberish_id 或 reason",
+      });
+    }
+
+    await mysqlConnectionPool.query(
       `
-      INSERT INTO Report (
-        reporter_id,
+      INSERT INTO GibberishReport (
+        user_id,
         gibberish_id,
-        reason,
-        status,
-        created_at
+        reason
       )
-      VALUES (?, ?, ?, 'pending', NOW())
+      VALUES (?, ?, ?)
       `,
-      [reporter_id, gibberish_id, String(reason).trim()],
+      [user_id, gibberish_id, reason],
     );
 
-    return res.status(201).json({
+    res.json({
       success: true,
-      message: "Report submitted",
-      report_id: result.insertId,
+      message: "檢舉成功",
     });
   } catch (error) {
-    console.error("Failed to submit report:", error);
-
-    if (error.code === "ER_NO_REFERENCED_ROW_2") {
-      return res.status(404).json({
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
         success: false,
-        message: "Reporter or gibberish not found",
+        message: "你已經檢舉過這則亂語",
       });
     }
 
-    return res.status(500).json({
+    console.error("Failed to report gibberish:", error);
+
+    res.status(500).json({
       success: false,
-      message: "Failed to submit report",
+      message: error.sqlMessage || error.message || "檢舉失敗",
     });
   }
 });
 
-router.get("/likes", async (req, res) => {
-  const gibberishIds = String(req.query.gibberish_ids || "")
-    .split(",")
-    .map((id) => Number(id))
-    .filter((id) => Number.isInteger(id) && id > 0);
-  const userId = Number(req.query.user_id);
-
-  if (gibberishIds.length === 0) {
-    return res.json({ success: true, likes: [] });
-  }
-
+/* =========================
+   錨點 3：管理員取得待審核檢舉
+   GET /report/pending?admin_user_id=2
+========================= */
+router.get("/pending", async (req, res) => {
   try {
-    await ensureLikeTable();
+    const { admin_user_id } = req.query;
 
-    const [countRows] = await mysqlConnectionPool.query(
-      `
-      SELECT gibberish_id, COUNT(*) AS like_count
-      FROM GibberishLike
-      WHERE gibberish_id IN (?)
-      GROUP BY gibberish_id
-      `,
-      [gibberishIds],
-    );
-
-    let likedRows = [];
-    if (Number.isInteger(userId) && userId > 0) {
-      const [rows] = await mysqlConnectionPool.query(
-        `
-        SELECT gibberish_id
-        FROM GibberishLike
-        WHERE user_id = ? AND gibberish_id IN (?)
-        `,
-        [userId, gibberishIds],
-      );
-      likedRows = rows;
-    }
-
-    const countById = new Map(
-      countRows.map((row) => [Number(row.gibberish_id), Number(row.like_count)]),
-    );
-    const likedSet = new Set(likedRows.map((row) => Number(row.gibberish_id)));
-
-    return res.json({
-      success: true,
-      likes: gibberishIds.map((id) => ({
-        gibberish_id: id,
-        like_count: countById.get(id) || 0,
-        liked_by_me: likedSet.has(id),
-      })),
-    });
-  } catch (error) {
-    console.error("Failed to get likes:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to get likes",
-    });
-  }
-});
-
-router.post("/likes/toggle", async (req, res) => {
-  const userId = Number(req.body.user_id);
-  const gibberishId = Number(req.body.gibberish_id);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return res.status(401).json({
-      success: false,
-      message: "Please log in before liking",
-    });
-  }
-
-  if (!Number.isInteger(gibberishId) || gibberishId <= 0) {
-    return res.status(400).json({
-      success: false,
-      message: "gibberish_id is required",
-    });
-  }
-
-  try {
-    await ensureLikeTable();
-
-    const [existingLikes] = await mysqlConnectionPool.query(
-      "SELECT gibberish_like_id FROM GibberishLike WHERE user_id = ? AND gibberish_id = ? LIMIT 1",
-      [userId, gibberishId],
-    );
-
-    let liked = false;
-
-    if (existingLikes.length > 0) {
-      await mysqlConnectionPool.query(
-        "DELETE FROM GibberishLike WHERE user_id = ? AND gibberish_id = ?",
-        [userId, gibberishId],
-      );
-    } else {
-      await mysqlConnectionPool.query(
-        "INSERT INTO GibberishLike (user_id, gibberish_id) VALUES (?, ?)",
-        [userId, gibberishId],
-      );
-      liked = true;
-    }
-
-    const [countRows] = await mysqlConnectionPool.query(
-      "SELECT COUNT(*) AS like_count FROM GibberishLike WHERE gibberish_id = ?",
-      [gibberishId],
-    );
-
-    return res.json({
-      success: true,
-      gibberish_id: gibberishId,
-      liked,
-      like_count: Number(countRows[0].like_count),
-    });
-  } catch (error) {
-    console.error("Failed to toggle like:", error);
-
-    if (error.code === "ER_NO_REFERENCED_ROW_2") {
-      return res.status(404).json({
+    if (!admin_user_id) {
+      return res.status(400).json({
         success: false,
-        message: "User or gibberish not found",
+        message: "缺少 admin_user_id",
       });
     }
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to toggle like",
-    });
-  }
-});
+    const isAdmin = await checkIsAdmin(admin_user_id);
 
-router.get("/top-liked-today", async (req, res) => {
-  const userId = Number(req.query.user_id);
-
-  try {
-    await ensureLikeTable();
-
-    const [rankings] = await mysqlConnectionPool.query(
-      `
-      SELECT
-        g.gibberish_id,
-        g.content,
-        g.created_at,
-        u.user_name,
-        COUNT(gl.gibberish_like_id) AS like_count
-      FROM GibberishLike gl
-      JOIN Gibberish g ON gl.gibberish_id = g.gibberish_id
-      JOIN User u ON g.user_id = u.user_id
-      WHERE DATE(gl.created_at) = CURDATE()
-        AND g.pinned = 1
-      GROUP BY g.gibberish_id, g.content, g.created_at, u.user_name
-      ORDER BY like_count DESC, g.gibberish_id DESC
-      LIMIT 3
-      `,
-    );
-
-    let likedRows = [];
-    const rankingIds = rankings.map((item) => Number(item.gibberish_id));
-
-    if (Number.isInteger(userId) && userId > 0 && rankingIds.length > 0) {
-      const [rows] = await mysqlConnectionPool.query(
-        `
-        SELECT gibberish_id
-        FROM GibberishLike
-        WHERE user_id = ? AND gibberish_id IN (?)
-        `,
-        [userId, rankingIds],
-      );
-      likedRows = rows;
-    }
-
-    const likedSet = new Set(likedRows.map((row) => Number(row.gibberish_id)));
-
-    return res.json({
-      success: true,
-      rankings: rankings.map((item, index) => ({
-        rank: index + 1,
-        gibberish_id: item.gibberish_id,
-        content: item.content,
-        created_at: item.created_at,
-        user_name: item.user_name,
-        like_count: Number(item.like_count),
-        liked_by_me: likedSet.has(Number(item.gibberish_id)),
-      })),
-    });
-  } catch (error) {
-    console.error("Failed to get today's top liked gibberishes:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to get today's top liked gibberishes",
-    });
-  }
-});
-
-router.get("/", async (req, res) => {
-  const adminId = req.query.admin_id;
-
-  if (!adminId) {
-    return res.status(401).json({
-      success: false,
-      message: "admin_id is required",
-    });
-  }
-
-  try {
-    const adminUser = await getAdminUser(adminId);
-
-    if (!adminUser) {
+    if (!isAdmin) {
       return res.status(403).json({
         success: false,
-        message: "Admin permission required",
+        message: "沒有管理員權限",
       });
     }
 
     const [reports] = await mysqlConnectionPool.query(
       `
       SELECT
-        r.report_id,
-        r.reporter_id,
+        gr.report_id,
+        gr.user_id AS reporter_id,
         reporter.user_name AS reporter_name,
-        r.gibberish_id,
+        gr.gibberish_id,
         g.content,
-        g.pinned,
+        author.user_id AS author_id,
         author.user_name AS author_name,
-        r.reason,
-        r.status,
-        r.created_at
-      FROM Report r
-      LEFT JOIN User reporter ON r.reporter_id = reporter.user_id
-      LEFT JOIN Gibberish g ON r.gibberish_id = g.gibberish_id
-      LEFT JOIN User author ON g.user_id = author.user_id
-      WHERE r.status = 'pending'
-      ORDER BY r.created_at DESC
+        gr.reason,
+        gr.status,
+        gr.created_at
+      FROM GibberishReport gr
+      JOIN User reporter
+        ON gr.user_id = reporter.user_id
+      JOIN Gibberish g
+        ON gr.gibberish_id = g.gibberish_id
+      JOIN User author
+        ON g.user_id = author.user_id
+      WHERE gr.status = 'pending'
+      ORDER BY gr.created_at DESC
       `,
     );
 
-    return res.json({
+    res.json({
       success: true,
       reports,
     });
   } catch (error) {
-    console.error("Failed to get reports:", error);
-    return res.status(500).json({
+    console.error("Failed to get pending reports:", error);
+
+    res.status(500).json({
       success: false,
-      message: "Failed to get reports",
+      message: error.sqlMessage || error.message || "取得檢舉列表失敗",
     });
   }
 });
 
-router.patch("/:reportId", async (req, res) => {
-  const { admin_id, status } = req.body;
-  const allowedStatuses = ["pending", "reviewed", "rejected", "resolved"];
-
-  if (!admin_id) {
-    return res.status(401).json({
-      success: false,
-      message: "admin_id is required",
-    });
-  }
-
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid report status",
-    });
-  }
-
-  const connection = await mysqlConnectionPool.getConnection();
-
+/* =========================
+   錨點 4：管理員判定檢舉成立
+   POST /report/:report_id/approve
+========================= */
+router.post("/:report_id/approve", async (req, res) => {
   try {
-    const adminUser = await getAdminUser(admin_id);
+    const { report_id } = req.params;
+    const { admin_user_id } = req.body;
 
-    if (!adminUser) {
-      return res.status(403).json({
+    if (!admin_user_id) {
+      return res.status(400).json({
         success: false,
-        message: "Admin permission required",
+        message: "缺少 admin_user_id",
       });
     }
 
-    await connection.beginTransaction();
+    const isAdmin = await checkIsAdmin(admin_user_id);
 
-    const [reports] = await connection.query(
-      "SELECT report_id, gibberish_id FROM Report WHERE report_id = ? LIMIT 1",
-      [req.params.reportId],
+    if (!isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "沒有管理員權限",
+      });
+    }
+
+    const [reports] = await mysqlConnectionPool.query(
+      `
+      SELECT gibberish_id
+      FROM GibberishReport
+      WHERE report_id = ?
+      `,
+      [report_id],
     );
 
     if (reports.length === 0) {
-      await connection.rollback();
       return res.status(404).json({
         success: false,
-        message: "Report not found",
+        message: "找不到這筆檢舉",
       });
     }
 
-    const report = reports[0];
+    const gibberishId = reports[0].gibberish_id;
 
-    const [result] = await connection.query(
-      "UPDATE Report SET status = ? WHERE report_id = ?",
-      [status, req.params.reportId],
+    await mysqlConnectionPool.query(
+      `
+      UPDATE Gibberish
+      SET is_hidden = TRUE
+      WHERE gibberish_id = ?
+      `,
+      [gibberishId],
     );
 
-    if (status === "resolved") {
-      await connection.query(
-        "UPDATE Gibberish SET pinned = 0 WHERE gibberish_id = ?",
-        [report.gibberish_id],
-      );
-    }
+    await mysqlConnectionPool.query(
+      `
+      UPDATE GibberishReport
+      SET status = 'reviewed'
+      WHERE gibberish_id = ?
+        AND status = 'pending'
+      `,
+      [gibberishId],
+    );
 
-    await connection.commit();
-
-    return res.json({
+    res.json({
       success: true,
-      message: "Report status updated",
-      removed_from_forum: status === "resolved",
+      message: "已判定檢舉成立，亂語已隱藏",
     });
   } catch (error) {
-    await connection.rollback();
-    console.error("Failed to update report:", error);
-    return res.status(500).json({
+    console.error("Failed to approve report:", error);
+
+    res.status(500).json({
       success: false,
-      message: "Failed to update report",
+      message: error.sqlMessage || error.message || "審核檢舉失敗",
     });
-  } finally {
-    connection.release();
+  }
+});
+
+/* =========================
+   錨點 5：管理員判定檢舉不成立
+   POST /report/:report_id/reject
+========================= */
+router.post("/:report_id/reject", async (req, res) => {
+  try {
+    const { report_id } = req.params;
+    const { admin_user_id } = req.body;
+
+    if (!admin_user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "缺少 admin_user_id",
+      });
+    }
+
+    const isAdmin = await checkIsAdmin(admin_user_id);
+
+    if (!isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "沒有管理員權限",
+      });
+    }
+
+    await mysqlConnectionPool.query(
+      `
+      UPDATE GibberishReport
+      SET status = 'rejected'
+      WHERE report_id = ?
+      `,
+      [report_id],
+    );
+
+    res.json({
+      success: true,
+      message: "已判定檢舉不成立",
+    });
+  } catch (error) {
+    console.error("Failed to reject report:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.sqlMessage || error.message || "駁回檢舉失敗",
+    });
   }
 });
 

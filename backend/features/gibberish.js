@@ -7,6 +7,11 @@ const router = express.Router();
 
   用途：
   將某一筆亂語設為目前使用者的置頂亂語
+
+  額外功能：
+  1. 每次成功置頂時，在 Notification 裡新增一筆 system 紀錄
+  2. 用這些 PINLOG 紀錄來計算使用者累積置頂次數
+  3. 達到 1、3、5、10 次時，新增 achievement 通知
 */
 router.post("/pin", async (req, res) => {
   const { user_id, gibberish_id } = req.body;
@@ -25,10 +30,15 @@ router.post("/pin", async (req, res) => {
 
     const [rows] = await connection.query(
       `
-      SELECT gibberish_id, user_id, content
+      SELECT
+        gibberish_id,
+        user_id,
+        content,
+        pinned
       FROM Gibberish
       WHERE gibberish_id = ?
         AND user_id = ?
+      LIMIT 1
       `,
       [gibberish_id, user_id],
     );
@@ -39,6 +49,28 @@ router.post("/pin", async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Gibberish not found or does not belong to this user",
+      });
+    }
+
+    const selectedGibberish = rows[0];
+    const alreadyPinned = Boolean(selectedGibberish.pinned);
+
+    /*
+      如果這句本來就已經是置頂，
+      不要重複增加 PINLOG，也不要重複算成就。
+    */
+    if (alreadyPinned) {
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: "This gibberish is already pinned",
+        pinnedGibberish: {
+          gibberish_id: selectedGibberish.gibberish_id,
+          user_id: selectedGibberish.user_id,
+          content: selectedGibberish.content,
+          pinned: true,
+        },
       });
     }
 
@@ -63,14 +95,109 @@ router.post("/pin", async (req, res) => {
       [gibberish_id, user_id],
     );
 
+    /*
+      錨點 1：
+      新增一筆 system 類型的紀錄。
+      這筆不是給使用者看的，是拿來計算「累積置頂次數」。
+    */
+    await connection.query(
+      `
+      INSERT INTO Notification (
+        user_id,
+        gibberish_id,
+        gibberish_like_id,
+        notification_type,
+        is_read,
+        content,
+        created_time
+      )
+      VALUES (?, ?, NULL, 'system', TRUE, ?, NOW())
+      `,
+      [
+        user_id,
+        gibberish_id,
+        `PINLOG: user ${user_id} pinned gibberish ${gibberish_id}`,
+      ],
+    );
+
+    /*
+      錨點 2：
+      直接從 Notification table 數 PINLOG。
+      這樣不用新增 table，也不用修改原本 table 欄位。
+    */
+    const [pinCountRows] = await connection.query(
+      `
+      SELECT COUNT(*) AS pin_count
+      FROM Notification
+      WHERE user_id = ?
+        AND notification_type = 'system'
+        AND content LIKE 'PINLOG:%'
+      `,
+      [user_id],
+    );
+
+    const pinCount = Number(pinCountRows[0].pin_count);
+
+    /*
+      錨點 3：
+      根據累積置頂次數，產生成就通知。
+    */
+    let achievementContent = "";
+
+    if (pinCount === 1) {
+      achievementContent = `你第一次將亂語設為今日至理名言：「${selectedGibberish.content}」`;
+    } else if (pinCount === 3) {
+      achievementContent =
+        "你已累積置頂 3 次亂語，今日至理名言越來越有份量了。";
+    } else if (pinCount === 5) {
+      achievementContent = "你已累積置頂 5 次亂語，亂語收藏家正式誕生。";
+    } else if (pinCount === 10) {
+      achievementContent = "你已累積置頂 10 次亂語，今日至理名言大師降臨。";
+    }
+
+    if (achievementContent) {
+      const [existingAchievementNotifications] = await connection.query(
+        `
+        SELECT notification_id
+        FROM Notification
+        WHERE user_id = ?
+          AND notification_type = 'achievement'
+          AND content = ?
+        LIMIT 1
+        `,
+        [user_id, achievementContent],
+      );
+
+      if (existingAchievementNotifications.length === 0) {
+        await connection.query(
+          `
+          INSERT INTO Notification (
+            user_id,
+            gibberish_id,
+            gibberish_like_id,
+            notification_type,
+            is_read,
+            content,
+            created_time
+          )
+          VALUES (?, ?, NULL, 'achievement', FALSE, ?, NOW())
+          `,
+          [user_id, gibberish_id, achievementContent],
+        );
+      }
+    }
+
     await connection.commit();
 
     res.json({
       success: true,
       pinnedGibberish: {
-        ...rows[0],
+        gibberish_id: selectedGibberish.gibberish_id,
+        user_id: selectedGibberish.user_id,
+        content: selectedGibberish.content,
         pinned: true,
       },
+      pin_count: pinCount,
     });
   } catch (error) {
     await connection.rollback();
@@ -85,7 +212,6 @@ router.post("/pin", async (req, res) => {
     connection.release();
   }
 });
-
 /*
   GET /gibberish/pinned?user_id=1
 

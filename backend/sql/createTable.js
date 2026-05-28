@@ -168,6 +168,41 @@ try {
   )
 `);
   await mysqlConnectionPool.query(`
+  CREATE TABLE IF NOT EXISTS GibberishReport (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    gibberish_id INT NOT NULL,
+    reason VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_gibberishreport_user
+      FOREIGN KEY (user_id) REFERENCES User(user_id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+
+    CONSTRAINT fk_gibberishreport_gibberish
+      FOREIGN KEY (gibberish_id) REFERENCES Gibberish(gibberish_id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+
+    CONSTRAINT uq_gibberishreport_user_gibberish
+      UNIQUE (user_id, gibberish_id),
+
+    CONSTRAINT chk_gibberishreport_reason
+      CHECK (reason IN (
+        '不適當內容',
+        '冒犯或騷擾',
+        '垃圾訊息',
+        '仇恨或歧視',
+        '其他原因'
+      )),
+
+    CONSTRAINT chk_gibberishreport_status
+      CHECK (status IN ('pending', 'reviewed', 'rejected'))
+  )
+`);
+  await mysqlConnectionPool.query(`
   CREATE TABLE IF NOT EXISTS Notification (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

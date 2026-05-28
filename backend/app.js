@@ -9,14 +9,15 @@ import mysqlConnectionPool from "./lib/mysql.js";
 
 import loginRoutes from "./features/login.js";
 import gibberishRoutes from "./features/gibberish.js";
-import levelRoutes from "./features/level.js"; 
-import notificationRoutes from "./features/notification.js"; 
+import levelRoutes from "./features/level.js";
+import notificationRoutes from "./features/notification.js";
 import shopRoutes from "./features/shop.js";
+import reportRoutes from "./features/report.js";
+import forumRoutes from "./features/forum.js";
 
 const app = express();
 
 app.use(express.json());
-
 
 // request logger middleware：用來測試每次 request 有沒有進入後端
 app.use((req, res, next) => {
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   );
   next();
 });
@@ -41,7 +42,8 @@ app.use("/gibberish", gibberishRoutes);
 app.use("/shop", shopRoutes);
 app.use("/level", levelRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/report", reportRoutes);
+app.use("/forum", forumRoutes);
 app.get("/ping", (req, res) => {
   return res.send("<h1>Pong!</h1>");
 });

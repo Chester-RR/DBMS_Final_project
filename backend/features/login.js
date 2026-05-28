@@ -42,9 +42,7 @@ router.post("/signup", async (req, res) => {
         level,
         coin_balance
       )
-
       VALUES (?, ?, ?, NOW(), NOW(), 0, 1, 2000)
-
       `,
       [userName, email, password],
     );
@@ -58,9 +56,7 @@ router.post("/signup", async (req, res) => {
         email: email,
         admin: 0,
         level: 1,
-
         coin_balance: 2000,
-
       },
     });
   } catch (error) {
@@ -87,6 +83,10 @@ router.post("/signup", async (req, res) => {
   使用者登入
   查出 user_id
   回傳給前端
+
+  額外功能：
+  登入成功後，新增一筆 system 通知到 Notification table。
+  同一天只新增一次，避免通知中心被登入紀錄洗版。
 */
 router.post("/login", async (req, res) => {
   const email = req.body["email"];
@@ -123,10 +123,54 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    const user = users[0];
+
+    /*
+      錨點 1：
+      登入成功後，先檢查今天是否已經有登入通知。
+      有的話就不重複新增。
+    */
+    const loginNotificationContent = "你今天已成功登入 While The AI Thinks。";
+
+    const [todayLoginNotifications] = await mysqlConnectionPool.query(
+      `
+      SELECT notification_id
+      FROM Notification
+      WHERE user_id = ?
+        AND notification_type = 'system'
+        AND content = ?
+        AND DATE(created_time) = CURDATE()
+      LIMIT 1
+      `,
+      [user.user_id, loginNotificationContent],
+    );
+
+    /*
+      錨點 2：
+      如果今天還沒有登入通知，就新增一筆 system 通知。
+    */
+    if (todayLoginNotifications.length === 0) {
+      await mysqlConnectionPool.query(
+        `
+        INSERT INTO Notification (
+          user_id,
+          gibberish_id,
+          gibberish_like_id,
+          notification_type,
+          is_read,
+          content,
+          created_time
+        )
+        VALUES (?, NULL, NULL, 'system', FALSE, ?, NOW())
+        `,
+        [user.user_id, loginNotificationContent],
+      );
+    }
+
     return res.json({
       success: true,
       message: "Login successful",
-      user: users[0],
+      user,
     });
   } catch (error) {
     console.error("Login failed:", error);

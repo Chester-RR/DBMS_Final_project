@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>亂語論壇</title>
+
+    <style>
+      /* =========================
+         錨點 1：整體顏色設定
+      ========================= */
+      :root {
+        --bg: #ddf7e9;
+        --primary: #086b43;
+        --primary-dark: #045935;
+        --text: #15543b;
+        --muted: #5f8272;
+        --card: #f4fff8;
+        --card-border: rgba(8, 107, 67, 0.14);
+        --danger: #ff4b4b;
+        --shadow: 0 14px 35px rgba(8, 107, 67, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, "Noto Sans TC", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      /* =========================
+         錨點 2：頁面容器
+      ========================= */
+      .page {
+        width: min(1380px, 78vw);
+        margin: 0 auto;
+        padding: 44px 0 80px;
+      }
+
+      /* =========================
+         錨點 3：上方標題列
+      ========================= */
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+      }
+
+      .page-title {
+        margin: 0;
+        color: var(--primary);
+        font-size: 42px;
+        font-weight: 900;
+        letter-spacing: 2px;
+      }
+
+      .page-subtitle {
+        margin: 4px 0 0;
+        font-size: 19px;
+        color: var(--text);
+        opacity: 0.9;
+      }
+
+      .home-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+        color: var(--primary);
+        font-size: 19px;
+        font-weight: 800;
+        text-decoration: none;
+        transition:
+          transform 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .home-link:hover {
+        transform: translateX(-4px);
+        color: var(--primary-dark);
+      }
+
+      .home-link .arrow {
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      /* =========================
+         錨點 4：今日人氣前三名區
+      ========================= */
+      .ranking-section {
+        margin-top: 54px;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 0;
+        color: var(--primary);
+        font-size: 32px;
+        font-weight: 900;
+      }
+
+      .section-title .heart-icon {
+        font-size: 34px;
+        font-weight: 400;
+      }
+
+      .section-subtitle {
+        margin: 4px 0 0;
+        color: var(--text);
+        font-size: 18px;
+        opacity: 0.9;
+      }
+
+      .ranking-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 22px;
+        margin-top: 28px;
+      }
+
+      .ranking-card {
+        position: relative;
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 26px;
+        padding: 24px 24px 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .rank-badge {
+        position: absolute;
+        top: -16px;
+        left: 22px;
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 20px;
+        box-shadow: 0 8px 18px rgba(8, 107, 67, 0.25);
+      }
+
+      .ranking-content {
+        margin: 20px 0 20px;
+        font-size: 24px;
+        font-weight: 900;
+        line-height: 1.5;
+        color: var(--primary-dark);
+      }
+
+      .ranking-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .like-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(8, 107, 67, 0.08);
+        color: var(--primary);
+        font-weight: 900;
+      }
+
+      .empty-ranking {
+        margin-top: 74px;
+        text-align: center;
+        color: #6f827c;
+        font-size: 21px;
+        font-weight: 700;
+      }
+
+      .empty-ranking.hide {
+        display: none;
+      }
+
+      /* =========================
+         錨點 5：論壇列表區
+      ========================= */
+      .forum-section {
+        margin-top: 110px;
+      }
+
+      .forum-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+      }
+
+      .forum-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .action-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: var(--primary);
+        color: white;
+        font-size: 15px;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(8, 107, 67, 0.18);
+        transition:
+          transform 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-2px);
+        background: var(--primary-dark);
+      }
+
+      .forum-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin-top: 26px;
+      }
+
+      .forum-card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 26px;
+        padding: 24px 26px;
+        box-shadow: 0 10px 28px rgba(8, 107, 67, 0.08);
+      }
+
+      .forum-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+      }
+
+      .author {
+        font-size: 16px;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .time {
+        margin-top: 4px;
+        font-size: 14px;
+        color: var(--muted);
+        opacity: 0.8;
+      }
+
+      .pin-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(8, 107, 67, 0.08);
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .forum-content {
+        margin: 18px 0 20px;
+        font-size: 25px;
+        font-weight: 900;
+        color: var(--primary-dark);
+        line-height: 1.5;
+      }
+
+      .forum-card-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .like-btn,
+      .report-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 15px;
+        font-size: 15px;
+        font-weight: 900;
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .like-btn {
+        background: rgba(8, 107, 67, 0.08);
+        color: var(--primary);
+      }
+
+      .like-btn.liked {
+        background: var(--primary);
+        color: white;
+      }
+
+      .report-btn {
+        background: rgba(255, 75, 75, 0.1);
+        color: var(--danger);
+      }
+
+      .like-btn:hover,
+      .report-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .empty-forum {
+        padding: 80px 0;
+        text-align: center;
+        color: #6f827c;
+        font-size: 21px;
+        font-weight: 700;
+      }
+      /* =========================
+   錨點 5-2：管理員檢舉審核區
+========================= */
+      .admin-report-section {
+        margin-top: 54px;
+        margin-bottom: 54px;
+      }
+
+      .admin-report-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin-top: 26px;
+      }
+
+      .admin-report-card {
+        background: #fffaf4;
+        border: 1px solid rgba(255, 75, 75, 0.18);
+        border-radius: 26px;
+        padding: 24px 26px;
+        box-shadow: 0 10px 28px rgba(255, 75, 75, 0.08);
+      }
+
+      .admin-report-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .admin-report-content {
+        margin: 16px 0;
+        color: var(--primary-dark);
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1.5;
+      }
+
+      .admin-report-reason {
+        display: inline-flex;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255, 75, 75, 0.12);
+        color: var(--danger);
+        font-weight: 900;
+      }
+
+      .admin-report-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .approve-report-btn,
+      .reject-report-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .approve-report-btn {
+        background: var(--primary);
+        color: white;
+      }
+
+      .reject-report-btn {
+        background: #efe8e3;
+        color: var(--primary);
+      }
+
+      .empty-admin-reports {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 800;
+      }
+      /* =========================
+   錨點 5-1：檢舉彈窗
+========================= */
+      .hidden {
+        display: none !important;
+      }
+
+      .report-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .report-box {
+        width: 420px;
+        background: #f4fff8;
+        border-radius: 26px;
+        padding: 28px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        color: var(--primary-dark);
+      }
+
+      .report-box h2 {
+        margin: 0 0 8px;
+        font-size: 26px;
+        font-weight: 900;
+      }
+
+      .report-box p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .report-reasons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .report-reasons label {
+        background: white;
+        padding: 12px 16px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      .report-reasons input {
+        margin-right: 8px;
+      }
+
+      .report-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .report-cancel-btn,
+      .report-submit-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .report-cancel-btn {
+        background: #efe8e3;
+        color: var(--primary);
+      }
+
+      .report-submit-btn {
+        background: var(--primary);
+        color: white;
+      }
+      /* =========================
+         錨點 6：RWD
+      ========================= */
+      @media (max-width: 1100px) {
+        .page {
+          width: min(92vw, 900px);
+        }
+
+        .ranking-list {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .top-bar,
+        .forum-header,
+        .forum-card-top,
+        .forum-card-bottom {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .page-title {
+          font-size: 34px;
+        }
+
+        .section-title {
+          font-size: 27px;
+        }
+
+        .forum-content,
+        .ranking-content {
+          font-size: 21px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- =========================
+         錨點 A：整個論壇頁面
+    ========================== -->
+    <main class="page">
+      <!-- =========================
+           錨點 B：標題與回主頁
+      ========================== -->
+      <header class="top-bar">
+        <div>
+          <h1 class="page-title">亂語論壇</h1>
+          <p class="page-subtitle">看看大家分享的精選亂語。</p>
+        </div>
+
+        <a href="./interface.html" class="home-link">
+          <span class="arrow">←</span>
+          <span>回主頁</span>
+        </a>
+      </header>
+      <!-- =========================
+     錨點 B-1：管理員檢舉審核區
+      ========================== -->
+      <section id="adminReportSection" class="admin-report-section hidden">
+        <h2 class="section-title">
+          <span>⚠️</span>
+          <span>待審核檢舉</span>
+        </h2>
+        <p class="section-subtitle">只有管理員可以看到這個區塊。</p>
+
+        <div id="adminReportList" class="admin-report-list"></div>
+
+        <div id="emptyAdminReports" class="empty-admin-reports">
+          目前沒有待審核檢舉。
+        </div>
+      </section>
+      <!-- =========================
+           錨點 C：今日人氣前三名
+      ========================== -->
+      <section class="ranking-section">
+        <h2 class="section-title">
+          <span class="heart-icon">♡</span>
+          <span>今日人氣前三名</span>
+        </h2>
+        <p class="section-subtitle">依照今天收到的愛心數排名。</p>
+
+        <div id="rankingList" class="ranking-list"></div>
+
+        <div id="emptyRanking" class="empty-ranking">今天還沒有任何點讚。</div>
+      </section>
+
+      <!-- =========================
+           錨點 D：論壇列表
+      ========================== -->
+      <section class="forum-section">
+        <div class="forum-header">
+          <div>
+            <h2 class="section-title">全部亂語</h2>
+            <p class="section-subtitle">這裡會顯示大家釘選到論壇的亂語。</p>
+          </div>
+
+          <div class="forum-actions">
+            <button id="sortBtn" class="action-btn">依愛心排序</button>
+          </div>
+        </div>
+
+        <div id="forumList" class="forum-list"></div>
+
+        <div id="emptyForum" class="empty-forum">論壇目前還沒有亂語。</div>
+      </section>
+    </main>
+    <!-- =========================
+         錨點 E：檢舉原因彈窗
+    ========================== -->
+    <div id="reportModal" class="report-modal hidden">
+      <div class="report-box">
+        <h2>檢舉原因</h2>
+        <p>請選擇你要檢舉這則亂語的原因：</p>
+
+        <div class="report-reasons">
+          <label>
+            <input type="radio" name="reportReason" value="不適當內容" />
+            不適當內容
+          </label>
+
+          <label>
+            <input type="radio" name="reportReason" value="冒犯或騷擾" />
+            冒犯或騷擾
+          </label>
+
+          <label>
+            <input type="radio" name="reportReason" value="垃圾訊息" />
+            垃圾訊息
+          </label>
+
+          <label>
+            <input type="radio" name="reportReason" value="仇恨或歧視" />
+            仇恨或歧視
+          </label>
+
+          <label>
+            <input type="radio" name="reportReason" value="其他原因" />
+            其他原因
+          </label>
+        </div>
+
+        <div class="report-actions">
+          <button id="cancelReportBtn" class="report-cancel-btn" type="button">
+            取消
+          </button>
+
+          <button id="submitReportBtn" class="report-submit-btn" type="button">
+            確定檢舉
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* =========================
+     錨點 JS-1：後端 API 設定
+     3000 是 Express 後端
+  ========================= */
+      const API_BASE_URL = "http://127.0.0.1:3000";
+
+      let forumPosts = [];
+      let rankingPosts = [];
+
+      const currentUserId =
+        localStorage.getItem("user_id") || localStorage.getItem("userId") || "";
+
+      const rankingList = document.getElementById("rankingList");
+      const forumList = document.getElementById("forumList");
+      const emptyRanking = document.getElementById("emptyRanking");
+      const emptyForum = document.getElementById("emptyForum");
+      const sortBtn = document.getElementById("sortBtn");
+      const adminReportSection = document.getElementById("adminReportSection");
+      const adminReportList = document.getElementById("adminReportList");
+      const emptyAdminReports = document.getElementById("emptyAdminReports");
+
+      let pendingReports = [];
+
+      /* =========================
+     錨點 JS-2：載入全部亂語
+     呼叫 GET /forum
+  ========================= */
+      async function loadForumPosts() {
+        try {
+          const url = currentUserId
+            ? `${API_BASE_URL}/forum?user_id=${currentUserId}`
+            : `${API_BASE_URL}/forum`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Failed to load forum posts");
+          }
+
+          forumPosts = data.posts || [];
+
+          renderForum();
+        } catch (error) {
+          console.error("載入全部亂語失敗:", error);
+          forumPosts = [];
+          renderForum();
+        }
+      }
+
+      /* =========================
+     錨點 JS-3：載入今日人氣前三名
+     呼叫 GET /forum/top-liked-today
+  ========================= */
+      async function loadTodayRanking() {
+        try {
+          const url = currentUserId
+            ? `${API_BASE_URL}/forum/top-liked-today?user_id=${currentUserId}`
+            : `${API_BASE_URL}/forum/top-liked-today`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Failed to load today's ranking");
+          }
+
+          rankingPosts = data.rankings || [];
+
+          renderRanking();
+        } catch (error) {
+          console.error("載入今日人氣前三名失敗:", error);
+          rankingPosts = [];
+          renderRanking();
+        }
+      }
+      /* =========================
+   錨點 JS-3-1：管理員載入待審核檢舉
+   呼叫 GET /report/pending
+========================= */
+      async function loadPendingReports() {
+        if (!currentUserId) {
+          adminReportSection.classList.add("hidden");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/report/pending?admin_user_id=${currentUserId}`,
+          );
+
+          const data = await response.json();
+
+          if (response.status === 403) {
+            adminReportSection.classList.add("hidden");
+            return;
+          }
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Failed to load pending reports");
+          }
+
+          pendingReports = data.reports || [];
+          adminReportSection.classList.remove("hidden");
+          renderPendingReports();
+        } catch (error) {
+          console.error("載入待審核檢舉失敗:", error);
+          adminReportSection.classList.add("hidden");
+        }
+      }
+      /* =========================
+   錨點 JS-3-2：渲染管理員待審核檢舉
+========================= */
+      function renderPendingReports() {
+        adminReportList.innerHTML = "";
+
+        if (pendingReports.length === 0) {
+          emptyAdminReports.style.display = "block";
+          return;
+        }
+
+        emptyAdminReports.style.display = "none";
+
+        pendingReports.forEach((report) => {
+          const card = document.createElement("article");
+          card.className = "admin-report-card";
+
+          card.innerHTML = `
+      <div class="admin-report-meta">
+        <span>被檢舉亂語作者：${escapeHTML(report.author_name)}</span>
+        <span>檢舉者：${escapeHTML(report.reporter_name)}</span>
+      </div>
+
+      <div class="admin-report-content">
+        ${escapeHTML(report.content)}
+      </div>
+
+      <div class="admin-report-reason">
+        原因：${escapeHTML(report.reason)}
+      </div>
+
+      <div class="admin-report-actions">
+        <button
+          class="reject-report-btn"
+          data-report-id="${report.report_id}"
+        >
+          檢舉不成立
+        </button>
+
+        <button
+          class="approve-report-btn"
+          data-report-id="${report.report_id}"
+        >
+          檢舉成立
+        </button>
+      </div>
+    `;
+
+          adminReportList.appendChild(card);
+        });
+
+        bindAdminReportButtons();
+      }
+      /* =========================
+     錨點 JS-4：渲染今日人氣前三名
+  ========================= */
+      function renderRanking() {
+        rankingList.innerHTML = "";
+
+        if (rankingPosts.length === 0) {
+          emptyRanking.classList.remove("hide");
+          return;
+        }
+
+        emptyRanking.classList.add("hide");
+
+        rankingPosts.forEach((post, index) => {
+          const card = document.createElement("article");
+          card.className = "ranking-card";
+
+          card.innerHTML = `
+        <div class="rank-badge">${post.rank || index + 1}</div>
+
+        <div class="ranking-content">
+          ${escapeHTML(post.content)}
+        </div>
+
+        <div class="ranking-meta">
+          <span>by ${escapeHTML(post.user_name)}</span>
+          <span class="like-pill">♡ ${post.like_count}</span>
+        </div>
+      `;
+
+          rankingList.appendChild(card);
+        });
+      }
+
+      /* =========================
+     錨點 JS-5：渲染全部亂語卡片
+  ========================= */
+      function renderForum() {
+        forumList.innerHTML = "";
+
+        if (forumPosts.length === 0) {
+          emptyForum.style.display = "block";
+          return;
+        }
+
+        emptyForum.style.display = "none";
+
+        forumPosts.forEach((post) => {
+          const card = document.createElement("article");
+          card.className = "forum-card";
+
+          card.innerHTML = `
+        <div class="forum-card-top">
+          <div>
+            <div class="author">by ${escapeHTML(post.user_name)}</div>
+            <div class="time">${formatDate(post.created_at)}</div>
+          </div>
+
+          ${post.pinned ? `<div class="pin-label">📌 已釘選到論壇</div>` : ``}
+        </div>
+
+        <div class="forum-content">
+          ${escapeHTML(post.content)}
+        </div>
+
+        <div class="forum-card-bottom">
+          <div class="card-actions">
+            <button
+              class="like-btn ${post.liked_by_me ? "liked" : ""}"
+              data-id="${post.gibberish_id}"
+            >
+              ${post.liked_by_me ? "♥" : "♡"} ${post.like_count}
+            </button>
+
+            <button
+              class="report-btn"
+              data-id="${post.gibberish_id}"
+            >
+              檢舉
+            </button>
+          </div>
+        </div>
+      `;
+
+          forumList.appendChild(card);
+        });
+
+        bindCardButtons();
+      }
+
+      /* =========================
+     錨點 JS-6：綁定按讚與檢舉按鈕
+  ========================= */
+      function bindCardButtons() {
+        const likeButtons = document.querySelectorAll(".like-btn");
+        const reportButtons = document.querySelectorAll(".report-btn");
+
+        likeButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const gibberishId = Number(button.dataset.id);
+            toggleLike(gibberishId);
+          });
+        });
+
+        reportButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const gibberishId = Number(button.dataset.id);
+            openReportModal(gibberishId);
+          });
+        });
+      }
+      /* =========================
+   錨點 JS-6-1：綁定管理員審核按鈕
+========================= */
+      function bindAdminReportButtons() {
+        const approveButtons = document.querySelectorAll(".approve-report-btn");
+        const rejectButtons = document.querySelectorAll(".reject-report-btn");
+
+        approveButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const reportId = Number(button.dataset.reportId);
+            approveReport(reportId);
+          });
+        });
+
+        rejectButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const reportId = Number(button.dataset.reportId);
+            rejectReport(reportId);
+          });
+        });
+      }
+      /* =========================
+     錨點 JS-7：按讚 / 取消讚
+     呼叫 POST /forum/likes/toggle
+  ========================= */
+      async function toggleLike(gibberishId) {
+        if (!currentUserId) {
+          alert("請先登入再按讚");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/forum/likes/toggle`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: Number(currentUserId),
+              gibberish_id: Number(gibberishId),
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Failed to toggle like");
+          }
+
+          forumPosts = forumPosts.map((post) => {
+            if (Number(post.gibberish_id) !== Number(gibberishId)) {
+              return post;
+            }
+
+            return {
+              ...post,
+              liked_by_me: data.liked,
+              like_count: data.like_count,
+            };
+          });
+
+          renderForum();
+          await loadTodayRanking();
+        } catch (error) {
+          console.error("按讚失敗:", error);
+          alert("按讚失敗，請確認後端是否正常");
+        }
+      }
+      /* =========================
+   錨點 JS-7-1：管理員判定檢舉成立
+   呼叫 POST /report/:report_id/approve
+========================= */
+      async function approveReport(reportId) {
+        const confirmed = confirm("確定要判定這則亂語不妥並隱藏嗎？");
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/report/${reportId}/approve`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                admin_user_id: Number(currentUserId),
+              }),
+            },
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "審核失敗");
+          }
+
+          alert("已判定檢舉成立，亂語已隱藏");
+
+          await loadPendingReports();
+          await loadForumPosts();
+          await loadTodayRanking();
+        } catch (error) {
+          console.error("判定檢舉成立失敗:", error);
+          alert(error.message || "審核失敗");
+        }
+      }
+
+      /* =========================
+   錨點 JS-7-2：管理員判定檢舉不成立
+   呼叫 POST /report/:report_id/reject
+========================= */
+      async function rejectReport(reportId) {
+        const confirmed = confirm("確定要判定這筆檢舉不成立嗎？");
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/report/${reportId}/reject`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                admin_user_id: Number(currentUserId),
+              }),
+            },
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "審核失敗");
+          }
+
+          alert("已判定檢舉不成立");
+
+          await loadPendingReports();
+        } catch (error) {
+          console.error("判定檢舉不成立失敗:", error);
+          alert(error.message || "審核失敗");
+        }
+      }
+      /* =========================
+     錨點 JS-8：依愛心排序
+  ========================= */
+      function sortByLikes() {
+        forumPosts = [...forumPosts].sort(
+          (a, b) => Number(b.like_count) - Number(a.like_count),
+        );
+
+        renderForum();
+      }
+
+      /* =========================
+     錨點 JS-9：避免 HTML 注入
+  ========================= */
+      function escapeHTML(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      /* =========================
+     錨點 JS-10：格式化時間
+  ========================= */
+      function formatDate(value) {
+        if (!value) return "";
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+          return String(value);
+        }
+
+        return date.toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      /* =========================
+     錨點 JS-10-1：檢舉彈窗功能
+  ========================= */
+      let selectedReportGibberishId = null;
+
+      function openReportModal(gibberishId) {
+        selectedReportGibberishId = gibberishId;
+
+        const reportModal = document.getElementById("reportModal");
+        reportModal.classList.remove("hidden");
+
+        const checkedReason = document.querySelector(
+          'input[name="reportReason"]:checked',
+        );
+
+        if (checkedReason) {
+          checkedReason.checked = false;
+        }
+      }
+
+      function closeReportModal() {
+        selectedReportGibberishId = null;
+
+        const reportModal = document.getElementById("reportModal");
+        reportModal.classList.add("hidden");
+      }
+
+      document
+        .getElementById("cancelReportBtn")
+        .addEventListener("click", () => {
+          closeReportModal();
+        });
+
+      document
+        .getElementById("submitReportBtn")
+        .addEventListener("click", async () => {
+          const selectedReason = document.querySelector(
+            'input[name="reportReason"]:checked',
+          );
+
+          if (!selectedReason) {
+            alert("請先選擇檢舉原因");
+            return;
+          }
+
+          if (!currentUserId) {
+            alert("請先登入後再檢舉");
+            return;
+          }
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/report/gibberish`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                user_id: Number(currentUserId),
+                gibberish_id: Number(selectedReportGibberishId),
+                reason: selectedReason.value,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.message || "檢舉失敗");
+            }
+
+            alert("檢舉成功");
+            closeReportModal();
+          } catch (error) {
+            console.error("檢舉失敗:", error);
+            alert(error.message || "檢舉失敗，請確認後端是否正常");
+          }
+        });
+      /* =========================
+     錨點 JS-11：排序按鈕事件
+  ========================= */
+      sortBtn.addEventListener("click", () => {
+        sortByLikes();
+      });
+
+      /* =========================
+     錨點 JS-12：頁面一打開就載入後端資料
+  ========================= */
+      loadPendingReports();
+      loadTodayRanking();
+      loadForumPosts();
+    </script>
+  </body>
+</html>
