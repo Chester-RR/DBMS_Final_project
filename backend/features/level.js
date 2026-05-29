@@ -322,7 +322,43 @@ router.get("/:userId/history", async (req, res) => {
       is_equipped: Boolean(frame.is_equipped),
     }));
 
-    const history = [...titleHistory, ...frameHistory].sort(
+    const [purchaseRows] = await mysqlConnectionPool.query(
+      `SELECT
+         pr.purchase_id,
+         pr.item_id,
+         pr.price_at_purchase,
+         pr.purchased_at,
+         si.item_name,
+         si.description,
+         si.item_type,
+         si.image_url,
+         COALESCE(ui.is_equipped, FALSE) AS is_equipped
+       FROM PurchaseRecord pr
+       JOIN ShopItem si
+         ON pr.item_id = si.item_id
+       LEFT JOIN UserItem ui
+         ON ui.user_id = pr.user_id
+        AND ui.item_id = pr.item_id
+       WHERE pr.user_id = ?
+         AND si.item_type = 'avatar'
+       ORDER BY pr.purchased_at DESC`,
+      [req.params.userId],
+    );
+
+    const purchaseHistory = purchaseRows.map((purchase) => ({
+      type: "purchase",
+      id: purchase.purchase_id,
+      item_id: purchase.item_id,
+      name: purchase.item_name,
+      reason: purchase.description || `購買頭像時花費 ${purchase.price_at_purchase} coins`,
+      requirement: `商店購買，花費 ${purchase.price_at_purchase} coins`,
+      earned_at: purchase.purchased_at,
+      is_equipped: Boolean(purchase.is_equipped),
+      icon: purchase.image_url,
+      price_at_purchase: purchase.price_at_purchase,
+    }));
+
+    const history = [...titleHistory, ...frameHistory, ...purchaseHistory].sort(
       (a, b) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime(),
     );
 

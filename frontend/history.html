@@ -99,6 +99,10 @@
               <p class="text-xs font-bold text-on-muted">邊框</p>
               <p id="frame-count" class="mt-1 text-2xl font-extrabold text-primary">0</p>
             </div>
+            <div class="rounded-lg bg-surface-low/80 p-4">
+              <p class="text-xs font-bold text-on-muted">頭像</p>
+              <p id="purchase-count" class="mt-1 text-2xl font-extrabold text-primary">0</p>
+            </div>
           </div>
         </aside>
 
@@ -132,6 +136,7 @@
       const userLevel = document.getElementById("user-level");
       const titleCount = document.getElementById("title-count");
       const frameCount = document.getElementById("frame-count");
+      const purchaseCount = document.getElementById("purchase-count");
 
       document.getElementById("back-btn").addEventListener("click", () => {
         window.location.href = "./interface.html";
@@ -168,6 +173,14 @@
       }
 
       function getTypeMeta(type) {
+        if (type === "purchase") {
+          return {
+            label: "購買頭像",
+            icon: "shopping_bag",
+            badgeClass: "bg-white text-primary border border-outline",
+          };
+        }
+
         if (type === "frame") {
           return {
             label: "邊框",
@@ -191,6 +204,7 @@
         historyList.innerHTML = "";
         titleCount.textContent = String(sortedHistory.filter((item) => item.type === "title").length);
         frameCount.textContent = String(sortedHistory.filter((item) => item.type === "frame").length);
+        purchaseCount.textContent = String(sortedHistory.filter((item) => item.type === "purchase").length);
 
         if (sortedHistory.length === 0) {
           emptyState.classList.remove("hidden");
@@ -201,6 +215,8 @@
 
         sortedHistory.forEach((item) => {
           const meta = getTypeMeta(item.type);
+          const cardIcon =
+            item.type === "purchase" && item.icon ? escapeHTML(item.icon) : meta.icon;
           const card = document.createElement("article");
           card.className =
             "rounded-lg border border-outline bg-white/85 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
@@ -209,7 +225,7 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div class="flex min-w-0 gap-4">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${meta.badgeClass}">
-                  <span class="material-symbols-outlined">${meta.icon}</span>
+                  <span class="material-symbols-outlined">${cardIcon}</span>
                 </div>
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
@@ -227,7 +243,7 @@
                     ${escapeHTML(item.reason)}
                   </p>
                   <p class="mt-2 text-xs font-bold text-primary/80">
-                    條件：${escapeHTML(item.requirement)}
+                    來源/條件：${escapeHTML(item.requirement)}
                   </p>
                 </div>
               </div>
