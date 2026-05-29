@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>亂語論壇</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
 
     <style>
       /* =========================
@@ -33,6 +37,14 @@
         color: var(--text);
       }
 
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 500,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+
       /* =========================
          錨點 2：頁面容器
       ========================= */
@@ -47,9 +59,8 @@
       ========================= */
       .top-bar {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 24px;
+        align-items: center;
+        gap: 16px;
       }
 
       .page-title {
@@ -67,28 +78,95 @@
         opacity: 0.9;
       }
 
+      .top-copy {
+        min-width: 0;
+      }
+
+      .forum-summary {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-left: auto;
+        padding: 12px 16px;
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        background: rgba(244, 255, 248, 0.82);
+        box-shadow: 0 10px 24px rgba(8, 107, 67, 0.1);
+      }
+
+      .forum-summary-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(8, 107, 67, 0.1);
+        color: var(--primary);
+      }
+
+      .forum-summary-title {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .forum-summary-stats {
+        display: flex;
+        gap: 14px;
+        margin-top: 4px;
+      }
+
+      .forum-summary-stat {
+        min-width: 60px;
+      }
+
+      .forum-summary-value {
+        display: block;
+        color: var(--primary);
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .forum-summary-label {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
       .home-link {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
-        margin-top: 14px;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.8);
         color: var(--primary);
-        font-size: 19px;
-        font-weight: 800;
         text-decoration: none;
+        box-shadow: 0 6px 16px rgba(8, 107, 67, 0.08);
         transition:
           transform 0.2s ease,
+          background 0.2s ease,
           color 0.2s ease;
       }
 
       .home-link:hover {
-        transform: translateX(-4px);
+        transform: translateX(-2px);
+        background: var(--card);
         color: var(--primary-dark);
       }
 
-      .home-link .arrow {
-        font-size: 28px;
-        line-height: 1;
+      .home-link .material-symbols-outlined {
+        font-size: 24px;
       }
 
       /* =========================
@@ -519,7 +597,16 @@
       }
 
       @media (max-width: 700px) {
-        .top-bar,
+        .top-bar {
+          flex-wrap: wrap;
+        }
+
+        .forum-summary {
+          order: 3;
+          width: 100%;
+          margin-left: 60px;
+        }
+
         .forum-header,
         .forum-card-top,
         .forum-card-bottom {
@@ -552,15 +639,33 @@
            錨點 B：標題與回主頁
       ========================== -->
       <header class="top-bar">
-        <div>
+        <a href="./interface.html" class="home-link" title="回主頁">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+
+        <div class="top-copy">
           <h1 class="page-title">亂語論壇</h1>
           <p class="page-subtitle">看看大家分享的精選亂語。</p>
         </div>
 
-        <a href="./interface.html" class="home-link">
-          <span class="arrow">←</span>
-          <span>回主頁</span>
-        </a>
+        <aside class="forum-summary" aria-label="論壇概況">
+          <div class="forum-summary-icon">
+            <span class="material-symbols-outlined">forum</span>
+          </div>
+          <div>
+            <p class="forum-summary-title">論壇概況</p>
+            <div class="forum-summary-stats">
+              <span class="forum-summary-stat">
+                <strong id="summary-post-count" class="forum-summary-value">--</strong>
+                <span class="forum-summary-label">精選貼文</span>
+              </span>
+              <span class="forum-summary-stat">
+                <strong id="summary-ranking-count" class="forum-summary-value">--</strong>
+                <span class="forum-summary-label">今日上榜</span>
+              </span>
+            </div>
+          </div>
+        </aside>
       </header>
       <!-- =========================
      錨點 B-1：管理員檢舉審核區
@@ -681,8 +786,17 @@
       const adminReportSection = document.getElementById("adminReportSection");
       const adminReportList = document.getElementById("adminReportList");
       const emptyAdminReports = document.getElementById("emptyAdminReports");
+      const summaryPostCount = document.getElementById("summary-post-count");
+      const summaryRankingCount = document.getElementById(
+        "summary-ranking-count",
+      );
 
       let pendingReports = [];
+
+      function updateForumSummary() {
+        summaryPostCount.textContent = String(forumPosts.length);
+        summaryRankingCount.textContent = String(rankingPosts.length);
+      }
 
       /* =========================
      錨點 JS-2：載入全部亂語
@@ -704,10 +818,12 @@
           forumPosts = data.posts || [];
 
           renderForum();
+          updateForumSummary();
         } catch (error) {
           console.error("載入全部亂語失敗:", error);
           forumPosts = [];
           renderForum();
+          updateForumSummary();
         }
       }
 
@@ -731,10 +847,12 @@
           rankingPosts = data.rankings || [];
 
           renderRanking();
+          updateForumSummary();
         } catch (error) {
           console.error("載入今日人氣前三名失敗:", error);
           rankingPosts = [];
           renderRanking();
+          updateForumSummary();
         }
       }
       /* =========================
