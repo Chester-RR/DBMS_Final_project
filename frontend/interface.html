@@ -198,6 +198,21 @@
         color: var(--frame-border);
         text-shadow: 0 1px 8px rgba(255, 255, 255, 0.75);
       }
+
+      #profile-modal-overlay {
+        transition: opacity 0.2s ease;
+      }
+
+      #profile-modal {
+        transition:
+          transform 0.24s ease,
+          opacity 0.24s ease;
+      }
+
+      #profile-modal-overlay.hidden #profile-modal {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+      }
     </style>
   </head>
 
@@ -310,6 +325,7 @@
         <button
           class="relative min-w-[230px] border px-4 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 text-on-surface-variant group"
           id="user-box"
+          type="button"
         >
           <span
             class="w-12 h-12 rounded-xl border-2 flex items-center justify-center bg-white/70 text-primary shrink-0"
@@ -339,6 +355,183 @@
             >
           </span>
         </button>
+      </div>
+
+      <div
+        id="profile-modal-overlay"
+        class="fixed inset-0 z-[70] hidden bg-black/20 px-4 py-6 backdrop-blur-sm"
+      >
+        <section
+          id="profile-modal"
+          class="ml-auto flex max-h-[calc(100vh-3rem)] w-full max-w-[460px] flex-col overflow-hidden rounded-2xl border border-outline-variant/50 bg-surface-container-lowest shadow-2xl"
+        >
+          <header
+            class="flex items-center justify-between border-b border-outline-variant/30 px-5 py-4"
+          >
+            <div>
+              <h2 class="text-xl font-extrabold text-primary">個人資訊</h2>
+            </div>
+            <button
+              id="close-profile-modal"
+              class="flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant/50 bg-white/80 text-primary hover:bg-surface-container-high"
+              type="button"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </header>
+
+          <div class="custom-scrollbar overflow-y-auto px-5 py-5">
+            <div id="profile-loading" class="py-10 text-center">
+              <span class="material-symbols-outlined text-4xl text-primary"
+                >hourglass_top</span
+              >
+              <p class="mt-3 text-sm font-bold text-on-surface-variant">
+                正在載入個人資訊...
+              </p>
+            </div>
+
+            <div
+              id="profile-error"
+              class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+            >
+              個人資訊載入失敗，請確認後端 API 是否啟動。
+            </div>
+
+            <div id="profile-content" class="hidden space-y-4 text-left">
+              <section class="rounded-lg border border-outline-variant/40 bg-white/80 p-4">
+                <div class="flex items-center gap-3">
+                  <span
+                    id="profile-avatar-frame"
+                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 bg-white text-primary"
+                  >
+                    <span
+                      id="profile-avatar-icon"
+                      class="material-symbols-outlined text-4xl"
+                      >account_circle</span
+                    >
+                  </span>
+                  <div class="min-w-0">
+                    <p
+                      id="profile-name"
+                      class="truncate text-lg font-extrabold text-on-surface"
+                    >
+                      --
+                    </p>
+                    <p id="profile-email" class="truncate text-xs font-bold text-on-surface-variant">
+                      --
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="rounded-lg bg-surface-container-low px-3 py-2">
+                    <p class="text-xs font-bold text-on-surface-variant">等級</p>
+                    <p id="profile-level" class="mt-1 text-lg font-extrabold text-primary">
+                      --
+                    </p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low px-3 py-2">
+                    <p class="text-xs font-bold text-on-surface-variant">稱號</p>
+                    <p id="profile-title" class="mt-1 truncate text-sm font-extrabold text-primary">
+                      --
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-3 rounded-lg bg-surface-container-low px-3 py-2">
+                  <p class="text-xs font-bold text-on-surface-variant">目前邊框</p>
+                  <p id="profile-frame" class="mt-1 text-sm font-extrabold text-primary">
+                    --
+                  </p>
+                </div>
+              </section>
+
+              <section class="rounded-lg border border-outline-variant/40 bg-white/80 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 class="text-base font-extrabold text-primary">等級進度</h3>
+                    <p id="profile-level-note" class="mt-1 text-xs font-bold text-on-surface-variant">
+                      --
+                    </p>
+                  </div>
+                  <span
+                    id="profile-generation-count"
+                    class="rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary"
+                    >--</span
+                  >
+                </div>
+                <div class="mt-4 h-3 overflow-hidden rounded-full bg-surface-container-high">
+                  <div id="profile-progress-bar" class="h-full w-0 rounded-full bg-primary"></div>
+                </div>
+              </section>
+
+              <section class="rounded-lg border border-outline-variant/40 bg-white/80 p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-base font-extrabold text-primary">資產狀態</h3>
+                  <div class="flex items-center gap-2 text-primary">
+                    <span class="material-symbols-outlined">paid</span>
+                    <span id="profile-coin-balance" class="text-lg font-extrabold">--</span>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between gap-3 rounded-lg bg-surface-container-low px-3 py-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-primary">
+                      <span
+                        id="profile-equipped-avatar-icon"
+                        class="material-symbols-outlined text-3xl"
+                        >account_circle</span
+                      >
+                    </span>
+                    <div class="min-w-0">
+                      <p class="text-xs font-bold text-on-surface-variant">目前頭像</p>
+                      <p id="profile-equipped-avatar-name" class="truncate text-sm font-extrabold text-primary">
+                        --
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    id="profile-shop-btn"
+                    class="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-extrabold text-white hover:bg-primary-dim"
+                    type="button"
+                  >
+                    前往商店
+                  </button>
+                </div>
+              </section>
+
+              <section class="rounded-lg border border-outline-variant/40 bg-white/80 p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-base font-extrabold text-primary">收藏摘要</h3>
+                  <button
+                    id="profile-history-btn"
+                    class="rounded-lg border border-outline-variant/50 bg-white px-3 py-2 text-xs font-extrabold text-primary hover:bg-surface-container-high"
+                    type="button"
+                  >
+                    查看完整歷程
+                  </button>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-3">
+                  <div class="rounded-lg bg-surface-container-low px-3 py-3">
+                    <p class="text-xs font-bold text-on-surface-variant">稱號</p>
+                    <p id="profile-title-count" class="mt-1 text-2xl font-extrabold text-primary">
+                      0
+                    </p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low px-3 py-3">
+                    <p class="text-xs font-bold text-on-surface-variant">邊框</p>
+                    <p id="profile-frame-count" class="mt-1 text-2xl font-extrabold text-primary">
+                      0
+                    </p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low px-3 py-3">
+                    <p class="text-xs font-bold text-on-surface-variant">頭像</p>
+                    <p id="profile-avatar-count" class="mt-1 text-2xl font-extrabold text-primary">
+                      0
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Floating Glass Accents -->
@@ -562,6 +755,135 @@
 
       // 每成功生成一次內容後呼叫：通知後端 generation_count +1，
       // 後端會重新計算 level、發放符合條件的獎勵，最後回傳最新 profile。
+      function setProfilePanelState(state) {
+        document
+          .getElementById("profile-loading")
+          .classList.toggle("hidden", state !== "loading");
+        document
+          .getElementById("profile-error")
+          .classList.toggle("hidden", state !== "error");
+        document
+          .getElementById("profile-content")
+          .classList.toggle("hidden", state !== "ready");
+      }
+
+      function setText(id, value) {
+        document.getElementById(id).textContent = value ?? "--";
+      }
+
+      function applyProfilePanel(profile, history, shopData) {
+        const user = profile.user;
+        const title = profile.currentTitle || {};
+        const frame = profile.currentFrame || {};
+        const avatar = shopData.equippedAvatar;
+        const generationCount = Number(user.generation_count) || 0;
+        const level = Number(user.level) || 1;
+        const nextTarget = user.next_level_generation_target;
+        const currentLevelStart =
+          nextTarget === null ? generationCount : Math.max(0, nextTarget - 5);
+        const levelSpan =
+          nextTarget === null ? 1 : Math.max(1, nextTarget - currentLevelStart);
+        const levelProgress =
+          nextTarget === null
+            ? 100
+            : Math.max(
+                0,
+                Math.min(
+                  100,
+                  ((generationCount - currentLevelStart) / levelSpan) * 100,
+                ),
+              );
+        const remainingGenerations =
+          nextTarget === null ? 0 : Math.max(0, Number(nextTarget) - generationCount);
+
+        setText("profile-name", user.name || "username");
+        setText("profile-email", user.email || "--");
+        setText("profile-level", `Lv.${level}`);
+        setText("profile-title", title.title_name || "尚未取得稱號");
+        setText("profile-frame", frame.frame_name || "預設邊框");
+        setText("profile-generation-count", `${generationCount} 次`);
+        setText(
+          "profile-level-note",
+          nextTarget === null
+            ? `已達滿級，累積生成 ${generationCount} 次`
+            : `已生成 ${generationCount} 次，距離 Lv.${level + 1} 還差 ${remainingGenerations} 次`,
+        );
+        setText("profile-coin-balance", shopData.user?.coin_balance ?? 0);
+        setText("profile-equipped-avatar-name", avatar?.item_name || "尚未裝備頭像");
+        setText(
+          "profile-title-count",
+          history.filter((item) => item.type === "title").length,
+        );
+        setText(
+          "profile-frame-count",
+          history.filter((item) => item.type === "frame").length,
+        );
+        setText(
+          "profile-avatar-count",
+          history.filter((item) => item.type === "purchase").length,
+        );
+
+        document.getElementById("profile-progress-bar").style.width =
+          `${levelProgress}%`;
+
+        const avatarIconName =
+          avatar?.image_url || localStorage.getItem("avatar_icon") || "account_circle";
+        document.getElementById("profile-avatar-icon").textContent = avatarIconName;
+        document.getElementById("profile-equipped-avatar-icon").textContent =
+          avatarIconName;
+
+        const profileAvatarFrame = document.getElementById("profile-avatar-frame");
+        profileAvatarFrame.style.borderColor = frame.border_color || "#82b8a4";
+        profileAvatarFrame.style.boxShadow = `0 0 18px ${
+          frame.glow_color || "rgba(0, 105, 68, 0.18)"
+        }`;
+      }
+
+      async function loadProfilePanel() {
+        setProfilePanelState("loading");
+
+        try {
+          const [levelResponse, historyResponse, shopResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/level/${currentUserId}`),
+            fetch(`${API_BASE_URL}/level/${currentUserId}/history`),
+            fetch(`${API_BASE_URL}/shop/${currentUserId}`),
+          ]);
+
+          const [levelData, historyData, shopData] = await Promise.all([
+            levelResponse.json(),
+            historyResponse.json(),
+            shopResponse.json(),
+          ]);
+
+          if (!levelResponse.ok || !levelData.success) {
+            throw new Error(levelData.message || "Load profile failed");
+          }
+
+          if (!historyResponse.ok || !historyData.success) {
+            throw new Error(historyData.message || "Load history failed");
+          }
+
+          if (!shopResponse.ok || !shopData.success) {
+            throw new Error(shopData.message || "Load shop failed");
+          }
+
+          applyProfilePanel(levelData.profile, historyData.history || [], shopData);
+          setProfilePanelState("ready");
+        } catch (error) {
+          console.error("Profile panel failed:", error);
+          setProfilePanelState("error");
+        }
+      }
+
+      function openProfilePanel() {
+        document.getElementById("profile-modal-overlay").classList.remove("hidden");
+        loadProfilePanel();
+      }
+
+      function closeProfilePanel() {
+        document.getElementById("profile-modal-overlay").classList.add("hidden");
+      }
+
       async function recordGeneration() {
         try {
           const response = await fetch(
@@ -817,11 +1139,32 @@
       });
 
       const userBox = document.getElementById("user-box");
+      const profileModalOverlay = document.getElementById("profile-modal-overlay");
+      const closeProfileModalBtn = document.getElementById("close-profile-modal");
+      const profileShopBtn = document.getElementById("profile-shop-btn");
+      const profileHistoryBtn = document.getElementById("profile-history-btn");
 
       userBox.addEventListener("click", () => {
         userBox.classList.remove("animate-pop-up");
         void userBox.offsetWidth;
         userBox.classList.add("animate-pop-up");
+        openProfilePanel();
+      });
+
+      closeProfileModalBtn.addEventListener("click", closeProfilePanel);
+
+      profileModalOverlay.addEventListener("click", (event) => {
+        if (event.target === profileModalOverlay) {
+          closeProfilePanel();
+        }
+      });
+
+      profileShopBtn.addEventListener("click", () => {
+        window.location.href = "./shop.html";
+      });
+
+      profileHistoryBtn.addEventListener("click", () => {
+        window.location.href = "./history.html";
       });
 
       const logoutBtn = document.getElementById("logout-btn");
