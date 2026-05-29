@@ -290,6 +290,53 @@ async function getUserLevelProfile(userId) {
   };
 }
 
+// GET /level/:userId/history
+//
+// 讀取使用者已取得的稱號與邊框，合併成依照獲取時間排序的歷程。
+// 呼叫 getUserLevelProfile 會先同步目前等級與可領取獎勵，再回傳最新資料。
+router.get("/:userId/history", async (req, res) => {
+  try {
+    const profile = await getUserLevelProfile(req.params.userId);
+
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const titleHistory = profile.earnedTitles.map((title) => ({
+      type: "title",
+      id: title.title_id,
+      name: title.title_name,
+      reason: title.description || title.requirement,
+      requirement: title.requirement,
+      earned_at: title.earned_at,
+      is_equipped: Boolean(title.is_equipped),
+    }));
+
+    const frameHistory = profile.earnedFrames.map((frame) => ({
+      type: "frame",
+      id: frame.frame_id,
+      name: frame.frame_name,
+      reason: frame.description || `level >= ${frame.unlock_level}`,
+      requirement: `level >= ${frame.unlock_level}`,
+      earned_at: frame.earned_at,
+      is_equipped: Boolean(frame.is_equipped),
+    }));
+
+    const history = [...titleHistory, ...frameHistory].sort(
+      (a, b) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime(),
+    );
+
+    return res.json({
+      success: true,
+      user: profile.user,
+      history,
+    });
+  } catch (error) {
+    console.error("Error getting level history:", error);
+    return res.status(500).json({ success: false, message: "Level history failed" });
+  }
+});
+
 // GET /level/:userId
 //
 // 讀取某個使用者的等級 profile。

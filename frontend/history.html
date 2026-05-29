@@ -1,0 +1,275 @@
+<!doctype html>
+<html class="light" lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>我的歷程</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#006944",
+              "primary-dim": "#005c3b",
+              surface: "#d9ffee",
+              "surface-low": "#c0fee5",
+              "surface-high": "#a9f1d6",
+              "on-surface": "#003629",
+              "on-muted": "#306554",
+              outline: "#82b8a4",
+            },
+            fontFamily: {
+              body: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 500,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+
+      .history-bg {
+        background-color: #d9ffee;
+        background-image:
+          radial-gradient(at 0% 0%, rgba(192, 254, 229, 0.9) 0px, transparent 46%),
+          radial-gradient(at 100% 10%, rgba(126, 253, 190, 0.5) 0px, transparent 40%),
+          radial-gradient(at 100% 100%, rgba(255, 255, 255, 0.85) 0px, transparent 45%);
+      }
+    </style>
+  </head>
+  <body class="history-bg min-h-screen font-body text-on-surface">
+    <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6">
+      <header
+        class="flex flex-col gap-4 border-b border-outline/50 pb-5 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            id="back-btn"
+            class="flex h-11 w-11 items-center justify-center rounded-lg border border-outline bg-white/85 text-primary shadow-sm hover:bg-surface-low"
+            type="button"
+            title="返回"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div>
+            <h1 class="text-2xl font-extrabold">我的歷程</h1>
+            <p class="mt-1 text-sm font-medium text-on-muted">
+              已取得的稱號與邊框，依照獲取時間排序
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="flex items-center gap-3 rounded-lg border border-outline bg-white/85 px-4 py-3 shadow-sm"
+        >
+          <span class="material-symbols-outlined text-primary">military_tech</span>
+          <div class="leading-tight">
+            <p id="user-name" class="text-sm font-extrabold">--</p>
+            <p id="user-level" class="text-xs font-bold text-on-muted">Lv.--</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid flex-1 gap-5 py-6 lg:grid-cols-[240px_1fr]">
+        <aside class="h-fit rounded-lg border border-outline bg-white/80 p-5 shadow-sm">
+          <p class="text-xs font-extrabold uppercase tracking-wider text-on-muted">
+            Collection
+          </p>
+          <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <div class="rounded-lg bg-surface-low/80 p-4">
+              <p class="text-xs font-bold text-on-muted">稱號</p>
+              <p id="title-count" class="mt-1 text-2xl font-extrabold text-primary">0</p>
+            </div>
+            <div class="rounded-lg bg-surface-low/80 p-4">
+              <p class="text-xs font-bold text-on-muted">邊框</p>
+              <p id="frame-count" class="mt-1 text-2xl font-extrabold text-primary">0</p>
+            </div>
+          </div>
+        </aside>
+
+        <section>
+          <div id="loading-state" class="rounded-lg border border-outline bg-white/80 p-8 text-center shadow-sm">
+            <span class="material-symbols-outlined text-4xl text-primary">hourglass_top</span>
+            <p class="mt-3 text-sm font-bold text-on-muted">正在重新讀取歷程...</p>
+          </div>
+
+          <div id="empty-state" class="hidden rounded-lg border border-outline bg-white/80 p-8 text-center shadow-sm">
+            <span class="material-symbols-outlined text-5xl text-primary">workspace_premium</span>
+            <p class="mt-3 text-lg font-extrabold">還沒有取得稱號或邊框</p>
+            <p class="mt-2 text-sm font-medium text-on-muted">
+              回到主畫面生成句子後，新的獎勵會出現在這裡。
+            </p>
+          </div>
+
+          <div id="history-list" class="flex flex-col gap-4"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const API_BASE_URL = "http://localhost:3000";
+      const userId = localStorage.getItem("user_id") || localStorage.getItem("userId");
+
+      const loadingState = document.getElementById("loading-state");
+      const emptyState = document.getElementById("empty-state");
+      const historyList = document.getElementById("history-list");
+      const userName = document.getElementById("user-name");
+      const userLevel = document.getElementById("user-level");
+      const titleCount = document.getElementById("title-count");
+      const frameCount = document.getElementById("frame-count");
+
+      document.getElementById("back-btn").addEventListener("click", () => {
+        window.location.href = "./interface.html";
+      });
+
+      if (!userId) {
+        alert("請先登入");
+        window.location.href = "./login.html";
+      }
+
+      function escapeHTML(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function formatDate(value) {
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+          return String(value || "");
+        }
+
+        return date.toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function getTypeMeta(type) {
+        if (type === "frame") {
+          return {
+            label: "邊框",
+            icon: "filter_frames",
+            badgeClass: "bg-surface-high text-primary",
+          };
+        }
+
+        return {
+          label: "稱號",
+          icon: "workspace_premium",
+          badgeClass: "bg-primary text-white",
+        };
+      }
+
+      function renderHistory(history) {
+        const sortedHistory = [...history].sort(
+          (a, b) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime(),
+        );
+
+        historyList.innerHTML = "";
+        titleCount.textContent = String(sortedHistory.filter((item) => item.type === "title").length);
+        frameCount.textContent = String(sortedHistory.filter((item) => item.type === "frame").length);
+
+        if (sortedHistory.length === 0) {
+          emptyState.classList.remove("hidden");
+          return;
+        }
+
+        emptyState.classList.add("hidden");
+
+        sortedHistory.forEach((item) => {
+          const meta = getTypeMeta(item.type);
+          const card = document.createElement("article");
+          card.className =
+            "rounded-lg border border-outline bg-white/85 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+
+          card.innerHTML = `
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div class="flex min-w-0 gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${meta.badgeClass}">
+                  <span class="material-symbols-outlined">${meta.icon}</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="text-lg font-extrabold text-on-surface">${escapeHTML(item.name)}</h2>
+                    <span class="rounded-full bg-surface-low px-3 py-1 text-xs font-extrabold text-primary">
+                      ${meta.label}
+                    </span>
+                    ${
+                      item.is_equipped
+                        ? `<span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary">使用中</span>`
+                        : ""
+                    }
+                  </div>
+                  <p class="mt-2 text-sm font-medium leading-6 text-on-muted">
+                    ${escapeHTML(item.reason)}
+                  </p>
+                  <p class="mt-2 text-xs font-bold text-primary/80">
+                    條件：${escapeHTML(item.requirement)}
+                  </p>
+                </div>
+              </div>
+              <time class="shrink-0 rounded-lg border border-outline bg-surface-low/70 px-3 py-2 text-sm font-bold text-primary">
+                ${formatDate(item.earned_at)}
+              </time>
+            </div>
+          `;
+
+          historyList.appendChild(card);
+        });
+      }
+
+      async function loadHistory() {
+        loadingState.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+        historyList.innerHTML = "";
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/level/${Number(userId)}/history`);
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Load history failed");
+          }
+
+          userName.textContent = data.user?.name || "使用者";
+          userLevel.textContent = `Lv.${data.user?.level ?? "--"}`;
+          renderHistory(data.history || []);
+        } catch (error) {
+          console.error("歷程載入失敗:", error);
+          historyList.innerHTML = `
+            <div class="rounded-lg border border-red-200 bg-white/85 p-6 text-sm font-bold text-red-700 shadow-sm">
+              歷程載入失敗，請確認後端 /level/history API 是否啟動。
+            </div>
+          `;
+        } finally {
+          loadingState.classList.add("hidden");
+        }
+      }
+
+      loadHistory();
+    </script>
+  </body>
+</html>

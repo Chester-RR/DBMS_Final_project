@@ -227,15 +227,12 @@
 
       <nav class="flex flex-col gap-4">
         <button
+          id="history-sidebar-btn"
+          type="button"
           class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
         >
-          <span>我的等級</span>
-        </button>
-
-        <button
-          class="sidebar-btn group relative w-full py-4 bg-primary text-on-primary font-bold text-lg rounded-2xl shadow-md hover:shadow-lg btn-spring-return btn-spring-active flex items-center justify-center gap-3"
-        >
-          <span>我的成就</span>
+          <span class="material-symbols-outlined">history</span>
+          <span>我的歷程</span>
         </button>
 
         <button
@@ -851,6 +848,7 @@
       const sidebarOverlay = document.getElementById("sidebar-overlay");
       const closeSidebar = document.getElementById("close-sidebar");
       const shopSidebarBtn = document.getElementById("shop-sidebar-btn");
+      const historySidebarBtn = document.getElementById("history-sidebar-btn");
 
       const toggleSidebar = () => {
         const isOpen = !sidebar.classList.contains("closed");
@@ -871,6 +869,9 @@
       menuToggle.addEventListener("click", toggleSidebar);
       closeSidebar.addEventListener("click", toggleSidebar);
       sidebarOverlay.addEventListener("click", toggleSidebar);
+      historySidebarBtn.addEventListener("click", () => {
+        window.location.href = "./history.html";
+      });
       shopSidebarBtn.addEventListener("click", () => {
         window.location.href = "./shop.html";
       });
