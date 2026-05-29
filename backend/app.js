@@ -5,15 +5,15 @@
 // = 啟動 server
 
 import express from "express";
-import mysqlConnectionPool from "./lib/mysql.js";
 
-import loginRoutes from "./features/login.js";
+
+import forumRoutes from "./features/forum.js";
 import gibberishRoutes from "./features/gibberish.js";
 import levelRoutes from "./features/level.js";
+import loginRoutes from "./features/login.js";
 import notificationRoutes from "./features/notification.js";
-import shopRoutes from "./features/shop.js";
 import reportRoutes from "./features/report.js";
-import forumRoutes from "./features/forum.js";
+import shopRoutes from "./features/shop.js";
 
 const app = express();
 
