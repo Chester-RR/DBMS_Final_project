@@ -1,122 +1,23 @@
 // backend/sql/feature-level-sql.js
 
-//新增useravatarframe和title table內的資料
+// 寫入等級系統的預設資料
 // ============================================================
-// 等級系統資料庫補丁與預設資料建立腳本
+// 等級系統預設資料建立腳本
 // ------------------------------------------------------------
-// 這個檔案不是 API，而是一次性或可重複執行的資料庫 migration / seed 腳本。
+// 這個檔案不是 API，而是一次性或可重複執行的 seed 腳本。
 // 執行方式通常是在 backend 目錄下跑：node sql/feature-level-sql.js
 //
-// 它負責把「等級、稱號、頭像框」需要的資料庫結構補齊：
-// 1. 在既有 User 表補上 generation_count 欄位，用來記錄成功生成句子的次數。
-// 2. 建立 AvatarFrame 表，定義每個頭像框的名稱、解鎖等級、稀有度、CSS 外觀。
-// 3. 建立 UserAvatarFrame 表，記錄每個使用者已解鎖哪些頭像框，以及目前是否裝備。
-// 4. 寫入預設稱號 Title 種子資料。
-// 5. 寫入預設頭像框 AvatarFrame 種子資料。
+// 資料表結構統一由 createTable.js 建立，這裡只負責寫入：
+// 1. 預設稱號 Title 種子資料。
+// 2. 預設頭像框 AvatarFrame 種子資料。
 //
 // 設計重點：
-// - CREATE TABLE IF NOT EXISTS 讓資料表已存在時不會重建。
-// - addColumnIfMissing 先查 INFORMATION_SCHEMA，避免重複 ADD COLUMN 造成錯誤。
 // - INSERT ... ON DUPLICATE KEY UPDATE 讓 seed 可以重跑，並同步更新描述或外觀設定。
 // ============================================================
 
 import mysqlConnectionPool from "../lib/mysql.js";
 
-// 安全新增欄位：只有欄位不存在時才 ALTER TABLE。
-//
-// 為什麼要自己查 INFORMATION_SCHEMA：
-// MySQL 的 ADD COLUMN 沒有像 CREATE TABLE IF NOT EXISTS 那麼直覺的跨版本安全寫法。
-// 如果直接 ALTER TABLE User ADD COLUMN generation_count，第二次執行就會因欄位已存在而失敗。
-//
-// 參數說明：
-// tableName：要檢查的資料表名稱，例如 "User"。
-// columnName：要新增的欄位名稱，例如 "generation_count"。
-// columnSql：完整欄位 SQL，例如 "generation_count INT NOT NULL DEFAULT 0 AFTER coin_balance"。
-async function addColumnIfMissing(tableName, columnName, columnSql) {
-  const [rows] = await mysqlConnectionPool.query(
-    `SELECT COLUMN_NAME
-     FROM INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = ?
-       AND COLUMN_NAME = ?`,
-    [tableName, columnName],
-  );
-
-  // rows 有資料代表欄位已存在，直接跳過即可，讓腳本可以重複執行。
-  if (rows.length > 0) return;
-
-  // 注意：tableName / columnSql 不能用 ? placeholder 取代，因為它們是 SQL 結構，不是值。
-  // 這裡的輸入都由程式內部固定提供，不接使用者輸入，所以 SQL injection 風險可控。
-  await mysqlConnectionPool.query(
-    `ALTER TABLE ${tableName} ADD COLUMN ${columnSql}`,
-  );
-}
-
 try {
-  // User.generation_count：記錄使用者成功生成句子的總次數。
-  // level.js 會用這個欄位計算等級：每 5 次生成提升 1 級，最高 50 級。
-  // AFTER coin_balance 只是讓欄位在資料表中排列得比較接近玩家狀態資料。
-  await addColumnIfMissing(
-    "User",
-    "generation_count",
-    "generation_count INT NOT NULL DEFAULT 0 AFTER coin_balance",
-  );
-
-  // AvatarFrame：頭像框主檔。
-  // 每一筆資料代表一種可解鎖的外觀框，包含前端可以直接使用的 CSS 顏色與背景。
-  await mysqlConnectionPool.query(`
-    CREATE TABLE IF NOT EXISTS AvatarFrame (
-      frame_id INT AUTO_INCREMENT PRIMARY KEY,
-      frame_name VARCHAR(100) NOT NULL UNIQUE,
-      description TEXT,
-      requirement TEXT NOT NULL,
-      unlock_level INT NOT NULL UNIQUE,
-      rarity VARCHAR(50) NOT NULL DEFAULT 'common',
-      border_color VARCHAR(50) NOT NULL,
-      glow_color VARCHAR(100) NOT NULL,
-      background_css VARCHAR(255) NOT NULL,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-      CONSTRAINT chk_avatarframe_unlock_level
-        CHECK (unlock_level >= 1 AND unlock_level <= 50)
-    )
-  `);
-
-  // UserAvatarFrame：使用者與頭像框的關聯表。
-  //
-  // 欄位關係：
-  // - user_id 指向 User，使用者被刪除時，其頭像框擁有紀錄一起刪除。
-  // - frame_id 指向 AvatarFrame，避免引用不存在的頭像框。
-  // - is_equipped 表示這個頭像框是否目前裝備中。
-  //
-  // UNIQUE(user_id, frame_id) 保證同一使用者不會重複擁有同一頭像框。
-  await mysqlConnectionPool.query(`
-    CREATE TABLE IF NOT EXISTS UserAvatarFrame (
-      user_frame_id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      frame_id INT NOT NULL,
-      earned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      is_equipped BOOLEAN NOT NULL DEFAULT FALSE,
-
-      CONSTRAINT fk_useravatarframe_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-      CONSTRAINT fk_useravatarframe_frame
-        FOREIGN KEY (frame_id) REFERENCES AvatarFrame(frame_id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-      CONSTRAINT uq_useravatarframe_user_frame
-        UNIQUE (user_id, frame_id),
-
-      CONSTRAINT chk_useravatarframe_is_equipped
-        CHECK (is_equipped IN (0, 1))
-    )
-  `);
-
   // 寫入預設稱號。
   //
   // Title 表本身在 createTable.js 已建立，這裡只負責補 seed data。

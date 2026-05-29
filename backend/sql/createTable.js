@@ -13,6 +13,7 @@ try {
     admin BOOLEAN NOT NULL DEFAULT FALSE,
     level INT NOT NULL DEFAULT 1,
     coin_balance INT NOT NULL DEFAULT 0,
+    generation_count INT NOT NULL DEFAULT 0,
     
 
     CONSTRAINT chk_user_admin
@@ -22,7 +23,10 @@ try {
       CHECK (level >= 1),
 
     CONSTRAINT chk_user_coin_balance
-      CHECK (coin_balance >= 0)
+      CHECK (coin_balance >= 0),
+
+    CONSTRAINT chk_user_generation_count
+      CHECK (generation_count >= 0)
   )
 `);
   await mysqlConnectionPool.query(`
@@ -71,6 +75,7 @@ try {
     content TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT fk_gibberish_user
     FOREIGN KEY (user_id) REFERENCES User(user_id)
@@ -83,7 +88,10 @@ try {
     ON UPDATE CASCADE,
 
     CONSTRAINT chk_gibberish_pinned
-    CHECK (pinned IN (0, 1))
+    CHECK (pinned IN (0, 1)),
+
+    CONSTRAINT chk_gibberish_is_hidden
+    CHECK (is_hidden IN (0, 1))
     );
 `);
   await mysqlConnectionPool.query(`
@@ -143,6 +151,49 @@ try {
       UNIQUE (user_id, title_id),
 
     CONSTRAINT chk_titleaward_is_equipped
+      CHECK (is_equipped IN (0, 1))
+  )
+`);
+  await mysqlConnectionPool.query(`
+  CREATE TABLE IF NOT EXISTS AvatarFrame (
+    frame_id INT AUTO_INCREMENT PRIMARY KEY,
+    frame_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    requirement TEXT NOT NULL,
+    unlock_level INT NOT NULL UNIQUE,
+    rarity VARCHAR(50) NOT NULL DEFAULT 'common',
+    border_color VARCHAR(50) NOT NULL,
+    glow_color VARCHAR(100) NOT NULL,
+    background_css VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_avatarframe_unlock_level
+      CHECK (unlock_level >= 1 AND unlock_level <= 50)
+  )
+`);
+  await mysqlConnectionPool.query(`
+  CREATE TABLE IF NOT EXISTS UserAvatarFrame (
+    user_frame_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    frame_id INT NOT NULL,
+    earned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_equipped BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_useravatarframe_user
+      FOREIGN KEY (user_id) REFERENCES User(user_id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+
+    CONSTRAINT fk_useravatarframe_frame
+      FOREIGN KEY (frame_id) REFERENCES AvatarFrame(frame_id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE,
+
+    CONSTRAINT uq_useravatarframe_user_frame
+      UNIQUE (user_id, frame_id),
+
+    CONSTRAINT chk_useravatarframe_is_equipped
       CHECK (is_equipped IN (0, 1))
   )
 `);
