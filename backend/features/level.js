@@ -127,7 +127,7 @@ async function awardEligibleFrames(user) {
   return awardedFrames;
 }
 
-async function syncUserRewards(userId) {
+export async function syncUserRewards(userId) {
   const user = await getUser(userId);
   if (!user) return null;
 

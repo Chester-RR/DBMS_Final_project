@@ -1,7 +1,88 @@
 import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
+import { syncUserRewards } from "./level.js";
 
 const router = express.Router();
+
+function parsePositiveInteger(value) {
+  const parsedValue = Number(value);
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) return null;
+  return parsedValue;
+}
+
+async function getTemplatesForUser(userId = null, connection = mysqlConnectionPool) {
+  const [templates] = await connection.query(
+    `
+    SELECT
+      tm.template_id,
+      tm.template_name,
+      tm.structure,
+      tm.genre,
+      tm.is_special,
+      tm.unlock_title_id,
+      tt.title_name AS unlock_title_name,
+      tt.requirement AS unlock_requirement,
+      CASE
+        WHEN tm.is_special = FALSE THEN TRUE
+        WHEN ta.title_award_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+      END AS is_unlocked
+    FROM Template tm
+    LEFT JOIN Title tt
+      ON tm.unlock_title_id = tt.title_id
+    LEFT JOIN TitleAward ta
+      ON ta.user_id = ?
+     AND ta.title_id = tm.unlock_title_id
+    ORDER BY tm.template_id
+    `,
+    [userId],
+  );
+
+  return templates.map((template) => ({
+    ...template,
+    is_special: Boolean(template.is_special),
+    is_unlocked: Boolean(template.is_unlocked),
+    is_locked: !Boolean(template.is_unlocked),
+  }));
+}
+
+async function getTemplateAccessForUser(userId, templateId, connection = mysqlConnectionPool) {
+  const [templates] = await connection.query(
+    `
+    SELECT
+      tm.template_id,
+      tm.template_name,
+      tm.structure,
+      tm.genre,
+      tm.is_special,
+      tm.unlock_title_id,
+      tt.title_name AS unlock_title_name,
+      tt.requirement AS unlock_requirement,
+      ta.title_award_id
+    FROM Template tm
+    LEFT JOIN Title tt
+      ON tm.unlock_title_id = tt.title_id
+    LEFT JOIN TitleAward ta
+      ON ta.user_id = ?
+     AND ta.title_id = tm.unlock_title_id
+    WHERE tm.template_id = ?
+    LIMIT 1
+    `,
+    [userId, templateId],
+  );
+
+  const template = templates[0];
+  if (!template) return null;
+
+  const isUnlocked = !template.is_special || Boolean(template.title_award_id);
+
+  return {
+    ...template,
+    is_special: Boolean(template.is_special),
+    is_unlocked: isUnlocked,
+    is_locked: !isUnlocked,
+  };
+}
 /*
   POST /gibberish/pin
 
@@ -255,30 +336,46 @@ router.get("/pinned", async (req, res) => {
   }
 });
 /*
-  GET /gibberish/templates
+  GET /gibberish/templates?user_id=1
 
   用途：
-  取得所有模板，給前端右下角模板選擇區使用
+  取得模板與目前使用者的解鎖狀態，給前端右下角模板選擇區使用
 */
 router.get("/templates", async (req, res) => {
   try {
-    const [templates] = await mysqlConnectionPool.query(
-      `
-      SELECT
-        template_id,
-        template_name,
-        structure,
-        genre
-      FROM Template
-      ORDER BY template_id
-      `,
-    );
+    const userId = req.query.user_id
+      ? parsePositiveInteger(req.query.user_id)
+      : null;
 
-    res.json(templates);
+    if (req.query.user_id && !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "user_id must be a positive integer",
+      });
+    }
+
+    if (userId) {
+      const syncResult = await syncUserRewards(userId);
+
+      if (!syncResult) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+    }
+
+    const templates = await getTemplatesForUser(userId);
+
+    res.json({
+      success: true,
+      templates,
+    });
   } catch (error) {
     console.error("Failed to get templates:", error);
 
     res.status(500).json({
+      success: false,
       message: "Failed to get templates",
     });
   }
@@ -334,17 +431,26 @@ router.get("/my", async (req, res) => {
   產生一句 Gibberish
 */
 router.post("/generate", async (req, res) => {
-  const { template_id, user_id } = req.body;
+  const templateId = parsePositiveInteger(req.body?.template_id);
+  const userId = parsePositiveInteger(req.body?.user_id);
 
-  if (!template_id) {
+  if (!templateId) {
     return res.status(400).json({
       message: "template_id is required",
     });
   }
 
-  if (!user_id) {
+  if (!userId) {
     return res.status(400).json({
       message: "user_id is required",
+    });
+  }
+
+  const syncResult = await syncUserRewards(userId);
+
+  if (!syncResult) {
+    return res.status(404).json({
+      message: "User not found",
     });
   }
 
@@ -354,21 +460,9 @@ router.post("/generate", async (req, res) => {
     await connection.beginTransaction();
 
     // 1. 找到使用者選的模板
-    const [templates] = await connection.query(
-      `
-      SELECT
-        template_id,
-        template_name,
-        structure,
-        genre
-      FROM Template
-      WHERE template_id = ?
-      LIMIT 1
-      `,
-      [template_id],
-    );
+    const template = await getTemplateAccessForUser(userId, templateId, connection);
 
-    if (templates.length === 0) {
+    if (!template) {
       await connection.rollback();
 
       return res.status(404).json({
@@ -376,7 +470,15 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const template = templates[0];
+    if (!template.is_unlocked) {
+      await connection.rollback();
+
+      return res.status(403).json({
+        message: "Template is locked",
+        unlock_title_name: template.unlock_title_name,
+        unlock_requirement: template.unlock_requirement,
+      });
+    }
 
     // 2. 找這個模板需要填哪些空格
     const [blanks] = await connection.query(
@@ -389,7 +491,7 @@ router.post("/generate", async (req, res) => {
       WHERE template_id = ?
       ORDER BY blank_order
       `,
-      [template_id],
+      [templateId],
     );
 
     let content = template.structure;
@@ -443,7 +545,7 @@ router.post("/generate", async (req, res) => {
       )
       VALUES (?, ?, ?, NOW(), 0)
       `,
-      [user_id, template_id, content],
+      [userId, templateId, content],
     );
 
     const gibberishId = gibberishResult.insertId;
@@ -469,9 +571,10 @@ router.post("/generate", async (req, res) => {
     // 6. 回傳給前端
     res.json({
       gibberish_id: gibberishId,
-      user_id,
+      user_id: userId,
       template_id: template.template_id,
       template_name: template.template_name,
+      is_special: template.is_special,
       content,
       words: usedWords,
     });

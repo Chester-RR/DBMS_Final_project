@@ -1175,7 +1175,7 @@
 
         // 生成內容已加入畫面後，立即記錄到後端，讓等級與獎勵狀態保持同步。
         if (shouldRecordGeneration) {
-          recordGeneration();
+          recordGeneration().then(() => loadTemplates());
         }
 
         requestAnimationFrame(() => {
@@ -1216,7 +1216,9 @@
 
       async function loadTemplates() {
         try {
-          const response = await fetch(`${API_BASE_URL}/gibberish/templates`);
+          const response = await fetch(
+            `${API_BASE_URL}/gibberish/templates?user_id=${Number(currentUserId)}`,
+          );
 
           if (!response.ok) {
             throw new Error("Failed to load templates");
@@ -1243,37 +1245,63 @@
       }
 
       function renderTemplates(templates) {
+        const previousSelectedTemplateId = selectedTemplateId;
         templateList.innerHTML = "";
+        selectedTemplateId = null;
+        selectedTemplateLabel.textContent = "尚未選擇模板";
 
         const baseClass =
-          "template-card w-full text-left rounded-2xl border px-4 py-3 transition-all duration-200 cursor-pointer";
+          "template-card w-full text-left rounded-2xl border px-4 py-3 transition-all duration-200";
 
         const normalClass =
           baseClass +
-          " bg-white/70 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/70";
+          " cursor-pointer bg-white/70 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/70";
 
         const activeClass =
           baseClass + " bg-primary border-primary text-white shadow-lg";
 
+        const lockedClass =
+          baseClass +
+          " cursor-not-allowed bg-surface-container-low/70 border-outline-variant/20 text-on-surface-variant opacity-70";
+
+        let firstUnlockedItem = null;
+        let previousUnlockedItem = null;
+
         templates.forEach((template, index) => {
+          const isLocked = template.is_locked || template.is_unlocked === false;
           const item = document.createElement("button");
           item.type = "button";
-          item.className = normalClass;
+          item.className = isLocked ? lockedClass : normalClass;
+          item.disabled = isLocked;
 
           item.innerHTML = `
         <div class="font-extrabold text-sm">
           ${template.template_name}
+          ${
+            template.is_special
+              ? `<span class="ml-2 rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] font-extrabold text-primary">特殊</span>`
+              : ""
+          }
         </div>
         <div class="text-xs opacity-80 mt-1">
           ${template.structure}
         </div>
+        ${
+          isLocked
+            ? `<div class="mt-2 text-xs font-bold text-primary">需取得「${template.unlock_title_name || "指定稱號"}」後解鎖</div>`
+            : ""
+        }
       `;
 
           item.addEventListener("click", () => {
+            if (isLocked) {
+              return;
+            }
+
             selectedTemplateId = template.template_id;
 
             document.querySelectorAll(".template-card").forEach((card) => {
-              card.className = normalClass;
+              card.className = card.disabled ? lockedClass : normalClass;
             });
 
             item.className = activeClass;
@@ -1285,10 +1313,22 @@
 
           templateList.appendChild(item);
 
-          if (index === 0) {
-            item.click();
+          if (!isLocked && !firstUnlockedItem) {
+            firstUnlockedItem = item;
+          }
+
+          if (
+            !isLocked &&
+            previousSelectedTemplateId &&
+            Number(template.template_id) === Number(previousSelectedTemplateId)
+          ) {
+            previousUnlockedItem = item;
           }
         });
+
+        if (previousUnlockedItem || firstUnlockedItem) {
+          (previousUnlockedItem || firstUnlockedItem).click();
+        }
       }
 
       btn.addEventListener("click", async () => {
@@ -1317,11 +1357,19 @@
             }),
           });
 
-          if (!response.ok) {
-            throw new Error("Failed to generate gibberish");
-          }
-
           const data = await response.json();
+
+          if (!response.ok) {
+            if (response.status === 403) {
+              alert(
+                `這個模板尚未解鎖，需要取得「${data.unlock_title_name || "指定稱號"}」。`,
+              );
+              await loadTemplates();
+              return;
+            }
+
+            throw new Error(data.message || "Failed to generate gibberish");
+          }
 
           console.log("後端回傳資料:", data);
 
