@@ -3,8 +3,8 @@ import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
 
-const LOYAL_CUSTOMER_TITLE_NAME = "\u5546\u5e97\u5e38\u5ba2";
-const LOYAL_CUSTOMER_AVATAR_NAME = "\u5546\u5e97\u5e38\u5ba2\u9650\u5b9a\u982d\u50cf";
+const LOYAL_CUSTOMER_TITLE_NAME = "商店常客";
+const LOYAL_CUSTOMER_AVATAR_NAME = "商店常客限定頭像";
 const LOYAL_CUSTOMER_UNLOCK_COUNT = 3;
 
 async function getUserForShop(userId, connection = mysqlConnectionPool) {

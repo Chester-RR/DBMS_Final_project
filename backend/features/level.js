@@ -5,7 +5,7 @@ const router = express.Router();
 
 const MAX_LEVEL = 50;
 const GENERATIONS_PER_LEVEL = 5;
-const LOYAL_CUSTOMER_AVATAR_NAME = "\u5546\u5e97\u5e38\u5ba2\u9650\u5b9a\u982d\u50cf";
+const LOYAL_CUSTOMER_AVATAR_NAME = "商店常客限定頭像";
 
 function calculateLevel(generationCount) {
   const safeCount = Number(generationCount) || 0;

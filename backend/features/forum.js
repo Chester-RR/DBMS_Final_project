@@ -2,7 +2,7 @@ import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
-const FORUM_RESONANCE_TITLE_NAME = "\u8ad6\u58c7\u5171\u9cf4\u8005";
+const FORUM_RESONANCE_TITLE_NAME = "論壇共鳴者";
 const FORUM_RESONANCE_BADGE = {
   label: FORUM_RESONANCE_TITLE_NAME,
   icon: "campaign",

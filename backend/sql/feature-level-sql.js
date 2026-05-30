@@ -42,44 +42,6 @@ try {
       background_css = VALUES(background_css)
   `);
 
-  await mysqlConnectionPool.query(`
-    INSERT IGNORE INTO TitleAward (user_id, title_id, is_equipped)
-    SELECT u.user_id, t.title_id, FALSE
-    FROM User u
-    JOIN Title t ON t.title_name = '無名生成者'
-  `);
-
-  await mysqlConnectionPool.query(`
-    UPDATE TitleAward default_award
-    JOIN Title t ON default_award.title_id = t.title_id
-    LEFT JOIN TitleAward equipped_award
-      ON equipped_award.user_id = default_award.user_id
-     AND equipped_award.is_equipped = TRUE
-     AND equipped_award.title_award_id <> default_award.title_award_id
-    SET default_award.is_equipped = TRUE
-    WHERE t.title_name = '無名生成者'
-      AND equipped_award.title_award_id IS NULL
-  `);
-
-  await mysqlConnectionPool.query(`
-    INSERT IGNORE INTO UserAvatarFrame (user_id, frame_id, is_equipped)
-    SELECT u.user_id, af.frame_id, FALSE
-    FROM User u
-    JOIN AvatarFrame af ON af.frame_name = '新芽邊框'
-  `);
-
-  await mysqlConnectionPool.query(`
-    UPDATE UserAvatarFrame default_frame
-    JOIN AvatarFrame af ON default_frame.frame_id = af.frame_id
-    LEFT JOIN UserAvatarFrame equipped_frame
-      ON equipped_frame.user_id = default_frame.user_id
-     AND equipped_frame.is_equipped = TRUE
-     AND equipped_frame.user_frame_id <> default_frame.user_frame_id
-    SET default_frame.is_equipped = TRUE
-    WHERE af.frame_name = '新芽邊框'
-      AND equipped_frame.user_frame_id IS NULL
-  `);
-
   console.log("level seed data initialized successfully.");
 } catch (error) {
   console.error("Error initializing level seed data:", error);
