@@ -18,8 +18,27 @@ function getAccountAgeDays(createdAt) {
   return Math.floor((Date.now() - createdTime) / 86400000);
 }
 
+function getTemplateUsageRequirement(requirement) {
+  const match = requirement.match(/^template_usage:(.+)\s*>=\s*(\d+)$/);
+  if (!match) return null;
+
+  return {
+    templateName: match[1].trim(),
+    requiredCount: Number(match[2]),
+  };
+}
+
 function titleRequirementIsMet(requirement, user) {
   const accountAgeDays = getAccountAgeDays(user.created_at);
+  const templateUsageRequirement = getTemplateUsageRequirement(requirement);
+
+  if (templateUsageRequirement) {
+    const usageCount = Number(
+      user.template_usage_counts?.[templateUsageRequirement.templateName],
+    ) || 0;
+
+    return usageCount >= templateUsageRequirement.requiredCount;
+  }
 
   if (requirement.includes("level >= 45")) return user.level >= 45;
   if (requirement.includes("level >= 35")) return user.level >= 35;
@@ -79,7 +98,29 @@ async function getUser(userId) {
     [LOYAL_CUSTOMER_AVATAR_NAME, userId],
   );
 
-  return rows[0];
+  const user = rows[0];
+  if (!user) return null;
+
+  const [templateUsageRows] = await mysqlConnectionPool.query(
+    `SELECT
+       t.template_name,
+       COUNT(*) AS usage_count
+     FROM Gibberish g
+     JOIN Template t
+       ON g.template_id = t.template_id
+     WHERE g.user_id = ?
+     GROUP BY t.template_name`,
+    [userId],
+  );
+
+  user.template_usage_counts = Object.fromEntries(
+    templateUsageRows.map((row) => [
+      row.template_name,
+      Number(row.usage_count) || 0,
+    ]),
+  );
+
+  return user;
 }
 
 async function awardEligibleTitles(user) {

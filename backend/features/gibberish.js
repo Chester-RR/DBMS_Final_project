@@ -502,15 +502,26 @@ router.post("/generate", async (req, res) => {
       const [words] = await connection.query(
         `
         SELECT
-          word_id,
-          word_text,
-          part_of_speech
-        FROM Word
-        WHERE part_of_speech = ?
+          w.word_id,
+          w.word_text,
+          w.part_of_speech,
+          w.vocabulary_pack_id,
+          vp.pack_name AS vocabulary_pack_name
+        FROM Word w
+        LEFT JOIN VocabularyPack vp
+          ON w.vocabulary_pack_id = vp.vocabulary_pack_id
+        LEFT JOIN TitleAward ta
+          ON ta.user_id = ?
+         AND ta.title_id = vp.unlock_title_id
+        WHERE w.part_of_speech = ?
+          AND (
+            w.vocabulary_pack_id IS NULL
+            OR ta.title_award_id IS NOT NULL
+          )
         ORDER BY RAND()
         LIMIT 1
         `,
-        [blank.part_of_speech],
+        [userId, blank.part_of_speech],
       );
 
       if (words.length === 0) {
@@ -529,6 +540,8 @@ router.post("/generate", async (req, res) => {
       usedWords.push({
         word_id: word.word_id,
         word_text: word.word_text,
+        vocabulary_pack_id: word.vocabulary_pack_id,
+        vocabulary_pack_name: word.vocabulary_pack_name,
         word_order: blank.blank_order,
       });
     }
