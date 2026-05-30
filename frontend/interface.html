@@ -445,6 +445,82 @@
                     --
                   </p>
                 </div>
+                <button
+                  id="profile-appearance-toggle"
+                  class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-extrabold text-white hover:bg-primary-dim"
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-xl">palette</span>
+                  <span>更改外觀</span>
+                </button>
+              </section>
+
+              <section
+                id="profile-appearance-panel"
+                class="hidden rounded-lg border border-outline-variant/40 bg-white/80 p-4"
+              >
+                <div class="flex rounded-lg bg-surface-container-low p-1">
+                  <button
+                    class="appearance-tab flex-1 rounded-md bg-primary px-3 py-2 text-xs font-extrabold text-white"
+                    data-appearance-tab="title"
+                    type="button"
+                  >
+                    稱號
+                  </button>
+                  <button
+                    class="appearance-tab flex-1 rounded-md px-3 py-2 text-xs font-extrabold text-primary"
+                    data-appearance-tab="frame"
+                    type="button"
+                  >
+                    頭像框
+                  </button>
+                  <button
+                    class="appearance-tab flex-1 rounded-md px-3 py-2 text-xs font-extrabold text-primary"
+                    data-appearance-tab="avatar"
+                    type="button"
+                  >
+                    頭像
+                  </button>
+                </div>
+
+                <div id="appearance-title-panel" class="appearance-panel mt-4 space-y-3">
+                  <div id="appearance-title-list" class="space-y-3"></div>
+                </div>
+
+                <div id="appearance-frame-panel" class="appearance-panel mt-4 hidden space-y-3">
+                  <div id="appearance-frame-list" class="space-y-3"></div>
+                </div>
+
+                <div id="appearance-avatar-panel" class="appearance-panel mt-4 hidden">
+                  <div class="rounded-lg bg-surface-container-low px-4 py-4">
+                    <div class="flex items-center gap-3">
+                      <span class="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-primary">
+                        <span
+                          id="appearance-current-avatar-icon"
+                          class="material-symbols-outlined text-3xl"
+                          >account_circle</span
+                        >
+                      </span>
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold text-on-surface-variant">目前頭像</p>
+                        <p
+                          id="appearance-current-avatar-name"
+                          class="truncate text-sm font-extrabold text-primary"
+                        >
+                          --
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      id="appearance-shop-btn"
+                      class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-extrabold text-white hover:bg-primary-dim"
+                      type="button"
+                    >
+                      <span class="material-symbols-outlined text-xl">storefront</span>
+                      <span>前往商店更換頭像</span>
+                    </button>
+                  </div>
+                </div>
               </section>
 
               <section class="rounded-lg border border-outline-variant/40 bg-white/80 p-4">
@@ -774,6 +850,127 @@
         document.getElementById(id).textContent = value ?? "--";
       }
 
+      let latestProfile = null;
+      let latestHistory = [];
+      let latestShopData = null;
+
+      function setAppearanceTab(activeTab) {
+        document.querySelectorAll(".appearance-tab").forEach((tab) => {
+          const isActive = tab.dataset.appearanceTab === activeTab;
+          tab.classList.toggle("bg-primary", isActive);
+          tab.classList.toggle("text-white", isActive);
+          tab.classList.toggle("text-primary", !isActive);
+        });
+
+        document.querySelectorAll(".appearance-panel").forEach((panel) => {
+          panel.classList.toggle("hidden", panel.id !== `appearance-${activeTab}-panel`);
+        });
+      }
+
+      function createAppearanceOption(item, type) {
+        const isTitle = type === "title";
+        const itemId = isTitle ? item.title_id : item.frame_id;
+        const itemName = isTitle ? item.title_name : item.frame_name;
+        const reason = item.description || item.requirement || "已取得";
+        const isEquipped = Boolean(item.is_equipped);
+        const card = document.createElement("div");
+
+        card.className =
+          "flex items-center justify-between gap-3 rounded-lg bg-surface-container-low px-3 py-3";
+
+        const content = document.createElement("div");
+        content.className = "min-w-0";
+
+        const name = document.createElement("p");
+        name.className = "truncate text-sm font-extrabold text-primary";
+        name.textContent = itemName || "--";
+
+        const detail = document.createElement("p");
+        detail.className = "mt-1 line-clamp-2 text-xs font-bold text-on-surface-variant";
+        detail.textContent = reason;
+
+        content.appendChild(name);
+        content.appendChild(detail);
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.appearanceAction = type;
+        button.dataset.itemId = itemId;
+        button.disabled = isEquipped;
+        button.textContent = isEquipped ? "已套用" : "套用";
+        button.className = isEquipped
+          ? "shrink-0 rounded-lg border border-outline-variant/50 bg-white px-3 py-2 text-xs font-extrabold text-primary opacity-70"
+          : "shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-extrabold text-white hover:bg-primary-dim";
+
+        card.appendChild(content);
+        card.appendChild(button);
+        return card;
+      }
+
+      function renderAppearanceOptions(profile, shopData) {
+        const titleList = document.getElementById("appearance-title-list");
+        const frameList = document.getElementById("appearance-frame-list");
+        const titles = profile.earnedTitles || [];
+        const frames = profile.earnedFrames || [];
+        const avatar = shopData.equippedAvatar;
+        const avatarIconName =
+          avatar?.image_url || localStorage.getItem("avatar_icon") || "account_circle";
+
+        titleList.innerHTML = "";
+        frameList.innerHTML = "";
+
+        if (titles.length === 0) {
+          titleList.innerHTML =
+            '<p class="rounded-lg bg-surface-container-low px-3 py-3 text-sm font-bold text-on-surface-variant">尚未取得任何稱號</p>';
+        } else {
+          titles.forEach((title) => {
+            titleList.appendChild(createAppearanceOption(title, "title"));
+          });
+        }
+
+        if (frames.length === 0) {
+          frameList.innerHTML =
+            '<p class="rounded-lg bg-surface-container-low px-3 py-3 text-sm font-bold text-on-surface-variant">尚未取得任何頭像框</p>';
+        } else {
+          frames.forEach((frame) => {
+            frameList.appendChild(createAppearanceOption(frame, "frame"));
+          });
+        }
+
+        document.getElementById("appearance-current-avatar-icon").textContent =
+          avatarIconName;
+        setText("appearance-current-avatar-name", avatar?.item_name || "尚未裝備頭像");
+      }
+
+      async function equipAppearanceItem(type, itemId, button) {
+        const bodyKey = type === "title" ? "title_id" : "frame_id";
+
+        button.disabled = true;
+        button.textContent = "套用中";
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/level/${currentUserId}/${type}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ [bodyKey]: Number(itemId) }),
+          });
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Equip appearance failed");
+          }
+
+          latestProfile = data.profile;
+          applyUserProfile(data.profile);
+          applyProfilePanel(data.profile, latestHistory, latestShopData);
+        } catch (error) {
+          console.error("Appearance equip failed:", error);
+          alert("外觀套用失敗，請稍後再試。");
+          button.disabled = false;
+          button.textContent = "套用";
+        }
+      }
+
       function applyProfilePanel(profile, history, shopData) {
         const user = profile.user;
         const title = profile.currentTitle || {};
@@ -840,6 +1037,8 @@
         profileAvatarFrame.style.boxShadow = `0 0 18px ${
           frame.glow_color || "rgba(0, 105, 68, 0.18)"
         }`;
+
+        renderAppearanceOptions(profile, shopData);
       }
 
       async function loadProfilePanel() {
@@ -870,7 +1069,11 @@
             throw new Error(shopData.message || "Load shop failed");
           }
 
-          applyProfilePanel(levelData.profile, historyData.history || [], shopData);
+          latestProfile = levelData.profile;
+          latestHistory = historyData.history || [];
+          latestShopData = shopData;
+
+          applyProfilePanel(latestProfile, latestHistory, latestShopData);
           setProfilePanelState("ready");
         } catch (error) {
           console.error("Profile panel failed:", error);
@@ -1146,6 +1349,15 @@
       const closeProfileModalBtn = document.getElementById("close-profile-modal");
       const profileShopBtn = document.getElementById("profile-shop-btn");
       const profileHistoryBtn = document.getElementById("profile-history-btn");
+      const profileAppearanceToggle = document.getElementById(
+        "profile-appearance-toggle",
+      );
+      const profileAppearancePanel = document.getElementById(
+        "profile-appearance-panel",
+      );
+      const appearanceShopBtn = document.getElementById("appearance-shop-btn");
+      const appearanceTitleList = document.getElementById("appearance-title-list");
+      const appearanceFrameList = document.getElementById("appearance-frame-list");
 
       userBox.addEventListener("click", () => {
         userBox.classList.remove("animate-pop-up");
@@ -1168,6 +1380,36 @@
 
       profileHistoryBtn.addEventListener("click", () => {
         window.location.href = "./history.html";
+      });
+
+      profileAppearanceToggle.addEventListener("click", () => {
+        profileAppearancePanel.classList.toggle("hidden");
+      });
+
+      document.querySelectorAll(".appearance-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          setAppearanceTab(tab.dataset.appearanceTab);
+        });
+      });
+
+      [appearanceTitleList, appearanceFrameList].forEach((list) => {
+        list.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-appearance-action]");
+
+          if (!button || button.disabled) {
+            return;
+          }
+
+          equipAppearanceItem(
+            button.dataset.appearanceAction,
+            button.dataset.itemId,
+            button,
+          );
+        });
+      });
+
+      appearanceShopBtn.addEventListener("click", () => {
+        window.location.href = "./shop.html";
       });
 
       const logoutBtn = document.getElementById("logout-btn");
