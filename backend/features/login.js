@@ -8,6 +8,8 @@ import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
+const DEFAULT_TITLE_NAME = "無名生成者";
+const DEFAULT_FRAME_NAME = "新芽邊框";
 
 /*
   POST /user/signup
@@ -29,8 +31,13 @@ router.post("/signup", async (req, res) => {
     });
   }
 
+  let connection;
+
   try {
-    const [result] = await mysqlConnectionPool.query(
+    connection = await mysqlConnectionPool.getConnection();
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
       `
       INSERT INTO User (
         user_name,
@@ -47,11 +54,37 @@ router.post("/signup", async (req, res) => {
       [userName, email, password],
     );
 
+    const userId = result.insertId;
+
+    await connection.query(
+      `
+      INSERT INTO TitleAward (user_id, title_id, is_equipped)
+      SELECT ?, title_id, TRUE
+      FROM Title
+      WHERE title_name = ?
+      ON DUPLICATE KEY UPDATE is_equipped = VALUES(is_equipped)
+      `,
+      [userId, DEFAULT_TITLE_NAME],
+    );
+
+    await connection.query(
+      `
+      INSERT INTO UserAvatarFrame (user_id, frame_id, is_equipped)
+      SELECT ?, frame_id, TRUE
+      FROM AvatarFrame
+      WHERE frame_name = ?
+      ON DUPLICATE KEY UPDATE is_equipped = VALUES(is_equipped)
+      `,
+      [userId, DEFAULT_FRAME_NAME],
+    );
+
+    await connection.commit();
+
     return res.status(201).json({
       success: true,
       message: "Signup successful",
       user: {
-        user_id: result.insertId,
+        user_id: userId,
         user_name: userName,
         email: email,
         admin: 0,
@@ -60,6 +93,10 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+
     console.error("Signup failed:", error);
 
     if (error.code === "ER_DUP_ENTRY") {
@@ -73,6 +110,10 @@ router.post("/signup", async (req, res) => {
       success: false,
       message: "Signup failed",
     });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 });
 

@@ -25,6 +25,7 @@ function titleRequirementIsMet(requirement, user) {
   if (requirement.includes("level >= 25")) return user.level >= 25;
   if (requirement.includes("level >= 15")) return user.level >= 15;
   if (requirement.includes("level >= 5")) return user.level >= 5;
+  if (requirement.includes("level >= 1")) return user.level >= 1;
   if (requirement.includes("account_age_days >= 30")) return accountAgeDays >= 30;
   if (requirement.includes("generation_count >= 100")) return user.generation_count >= 100;
   if (requirement.includes("generation_count >= 30")) return user.generation_count >= 30;
