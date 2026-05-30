@@ -6,11 +6,14 @@ import mysqlConnectionPool from "../lib/mysql.js";
   這個檔案負責新增：
   1. Template
   2. TemplateBlank
-  3. Word
+  3. VocabularyPack
+  4. Word
 
   維護方式：
   - 要新增模板，只改 templates
+  - 要新增詞彙庫，只改 vocabularyPacks
   - 要新增單字，只改 wordsByPartOfSpeech
+  - 要新增特殊詞彙，只改 wordsByVocabularyPack
   - 不需要改下面的新增邏輯
 */
 
@@ -85,6 +88,19 @@ const templates = [
     is_special: true,
     unlock_title_name: "百句鍛造者",
     blanks: ["noun", "noun", "verb", "ending_phrase"],
+  },
+];
+
+const vocabularyPacks = [
+  {
+    pack_name: "生活哲學詞彙庫",
+    description: "使用生活哲學模板生成 20 句後解鎖，讓哲學類亂語出現更多抽象詞彙。",
+    unlock_title_name: "生活哲學家",
+  },
+  {
+    pack_name: "高階混沌詞彙庫",
+    description: "使用高階混沌模板生成 30 句後解鎖，讓混沌類亂語出現更失控的詞彙。",
+    unlock_title_name: "混沌語彙師",
   },
 ];
 
@@ -282,19 +298,106 @@ const wordsByPartOfSpeech = {
   ],
 };
 
-async function insertWords(connection) {
-  for (const partOfSpeech in wordsByPartOfSpeech) {
-    const words = wordsByPartOfSpeech[partOfSpeech];
+const wordsByVocabularyPack = {
+  生活哲學詞彙庫: {
+    noun: [
+      "存在感稀薄的鬧鐘",
+      "會反思的便當",
+      "沒有答案的選擇題",
+      "被時間醃過的夢",
+      "靈魂裡的備忘錄",
+      "過期的熱情",
+      "正在冥想的鍵盤",
+      "人生的暫存檔",
+    ],
+    adjective: [
+      "空洞",
+      "深邃",
+      "矛盾",
+      "清醒",
+      "疲憊",
+      "溫柔",
+      "荒涼",
+      "難以名狀",
+    ],
+    verb: [
+      "凝視自己",
+      "慢慢放下",
+      "反覆懷疑",
+      "學會沉默",
+      "接受混亂",
+      "重新理解",
+      "溫柔崩解",
+      "和現實談判",
+    ],
+  },
+  高階混沌詞彙庫: {
+    noun: [
+      "遞迴宇宙",
+      "失控的服務容器",
+      "自我增殖的 bug",
+      "被污染的暫存記憶",
+      "多執行緒焦慮",
+      "崩壞中的需求文件",
+      "無法回滾的人生版本",
+      "正在冒煙的資料流",
+    ],
+    verb: [
+      "無限遞迴",
+      "交叉感染",
+      "自動膨脹",
+      "同步崩潰",
+      "瘋狂 fork",
+      "拒絕編譯",
+      "吞掉例外",
+      "產生第二個自己",
+    ],
+    ending_phrase: [
+      "而且沒有人敢重開機",
+      "直到 log 開始自己寫詩",
+      "最後連錯誤訊息都放棄了",
+      "這時候只能相信玄學",
+      "然後資料庫開始低聲尖叫",
+      "結果 rollback 也迷路了",
+      "留下了一份看不懂的 commit",
+      "所有人決定先去買咖啡",
+    ],
+  },
+};
+
+async function getVocabularyPackId(connection, packName) {
+  const [packs] = await connection.query(
+    `
+    SELECT vocabulary_pack_id
+    FROM VocabularyPack
+    WHERE pack_name = ?
+    LIMIT 1
+    `,
+    [packName],
+  );
+
+  if (packs.length === 0) {
+    throw new Error(`Vocabulary pack not found: ${packName}`);
+  }
+
+  return packs[0].vocabulary_pack_id;
+}
+
+async function insertWordList(connection, wordsByPartOfSpeechList, vocabularyPackId = null) {
+  for (const partOfSpeech in wordsByPartOfSpeechList) {
+    const words = wordsByPartOfSpeechList[partOfSpeech];
 
     for (const wordText of words) {
       const [existingWords] = await connection.query(
         `
         SELECT word_id
         FROM Word
-        WHERE word_text = ? AND part_of_speech = ?
+        WHERE word_text = ?
+          AND part_of_speech = ?
+          AND vocabulary_pack_id <=> ?
         LIMIT 1
         `,
-        [wordText, partOfSpeech],
+        [wordText, partOfSpeech, vocabularyPackId],
       );
 
       if (existingWords.length === 0) {
@@ -303,15 +406,92 @@ async function insertWords(connection) {
           INSERT INTO Word (
             word_text,
             part_of_speech,
+            vocabulary_pack_id,
             created_at,
             updated_at
           )
-          VALUES (?, ?, NOW(), NOW())
+          VALUES (?, ?, ?, NOW(), NOW())
           `,
-          [wordText, partOfSpeech],
+          [wordText, partOfSpeech, vocabularyPackId],
+        );
+      } else {
+        await connection.query(
+          `
+          UPDATE Word
+          SET updated_at = NOW()
+          WHERE word_id = ?
+          `,
+          [existingWords[0].word_id],
         );
       }
     }
+  }
+}
+
+async function insertVocabularyPacks(connection) {
+  for (const pack of vocabularyPacks) {
+    const [titles] = await connection.query(
+      `
+      SELECT title_id
+      FROM Title
+      WHERE title_name = ?
+      LIMIT 1
+      `,
+      [pack.unlock_title_name],
+    );
+
+    if (titles.length === 0) {
+      throw new Error(`Unlock title not found: ${pack.unlock_title_name}`);
+    }
+
+    const unlockTitleId = titles[0].title_id;
+
+    const [existingPacks] = await connection.query(
+      `
+      SELECT vocabulary_pack_id
+      FROM VocabularyPack
+      WHERE pack_name = ?
+      LIMIT 1
+      `,
+      [pack.pack_name],
+    );
+
+    if (existingPacks.length > 0) {
+      await connection.query(
+        `
+        UPDATE VocabularyPack
+        SET
+          description = ?,
+          unlock_title_id = ?,
+          updated_at = NOW()
+        WHERE vocabulary_pack_id = ?
+        `,
+        [pack.description, unlockTitleId, existingPacks[0].vocabulary_pack_id],
+      );
+    } else {
+      await connection.query(
+        `
+        INSERT INTO VocabularyPack (
+          pack_name,
+          description,
+          unlock_title_id,
+          created_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, NOW(), NOW())
+        `,
+        [pack.pack_name, pack.description, unlockTitleId],
+      );
+    }
+  }
+}
+
+async function insertWords(connection) {
+  await insertWordList(connection, wordsByPartOfSpeech);
+
+  for (const packName in wordsByVocabularyPack) {
+    const vocabularyPackId = await getVocabularyPackId(connection, packName);
+    await insertWordList(connection, wordsByVocabularyPack[packName], vocabularyPackId);
   }
 }
 
@@ -422,8 +602,9 @@ async function insertGibberishData() {
   try {
     await connection.beginTransaction();
 
-    await insertWords(connection);
     await insertTemplates(connection);
+    await insertVocabularyPacks(connection);
+    await insertWords(connection);
 
     await connection.commit();
 
