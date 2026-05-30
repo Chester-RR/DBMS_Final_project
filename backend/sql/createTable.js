@@ -198,6 +198,120 @@ try {
   )
 `);
   await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_titleaward_one_equipped_insert
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_titleaward_one_equipped_insert
+    BEFORE INSERT ON TitleAward
+    FOR EACH ROW
+    BEGIN
+      DECLARE locked_user_id INT;
+
+      IF NEW.is_equipped = TRUE THEN
+        SELECT user_id INTO locked_user_id
+        FROM User
+        WHERE user_id = NEW.user_id
+        FOR UPDATE;
+
+        IF EXISTS (
+          SELECT 1
+          FROM TitleAward
+          WHERE user_id = NEW.user_id
+            AND is_equipped = TRUE
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only one title can be equipped per user';
+        END IF;
+      END IF;
+    END
+  `);
+  await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_titleaward_one_equipped_update
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_titleaward_one_equipped_update
+    BEFORE UPDATE ON TitleAward
+    FOR EACH ROW
+    BEGIN
+      DECLARE locked_user_id INT;
+
+      IF NEW.is_equipped = TRUE THEN
+        SELECT user_id INTO locked_user_id
+        FROM User
+        WHERE user_id = NEW.user_id
+        FOR UPDATE;
+
+        IF EXISTS (
+          SELECT 1
+          FROM TitleAward
+          WHERE user_id = NEW.user_id
+            AND is_equipped = TRUE
+            AND title_award_id <> OLD.title_award_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only one title can be equipped per user';
+        END IF;
+      END IF;
+    END
+  `);
+  await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_useravatarframe_one_equipped_insert
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_useravatarframe_one_equipped_insert
+    BEFORE INSERT ON UserAvatarFrame
+    FOR EACH ROW
+    BEGIN
+      DECLARE locked_user_id INT;
+
+      IF NEW.is_equipped = TRUE THEN
+        SELECT user_id INTO locked_user_id
+        FROM User
+        WHERE user_id = NEW.user_id
+        FOR UPDATE;
+
+        IF EXISTS (
+          SELECT 1
+          FROM UserAvatarFrame
+          WHERE user_id = NEW.user_id
+            AND is_equipped = TRUE
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only one avatar frame can be equipped per user';
+        END IF;
+      END IF;
+    END
+  `);
+  await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_useravatarframe_one_equipped_update
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_useravatarframe_one_equipped_update
+    BEFORE UPDATE ON UserAvatarFrame
+    FOR EACH ROW
+    BEGIN
+      DECLARE locked_user_id INT;
+
+      IF NEW.is_equipped = TRUE THEN
+        SELECT user_id INTO locked_user_id
+        FROM User
+        WHERE user_id = NEW.user_id
+        FOR UPDATE;
+
+        IF EXISTS (
+          SELECT 1
+          FROM UserAvatarFrame
+          WHERE user_id = NEW.user_id
+            AND is_equipped = TRUE
+            AND user_frame_id <> OLD.user_frame_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only one avatar frame can be equipped per user';
+        END IF;
+      END IF;
+    END
+  `);
+  await mysqlConnectionPool.query(`
   CREATE TABLE IF NOT EXISTS GibberishLike (
     gibberish_like_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
