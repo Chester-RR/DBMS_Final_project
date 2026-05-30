@@ -40,6 +40,21 @@ try {
   )
 `);
   await mysqlConnectionPool.query(`
+  CREATE TABLE IF NOT EXISTS VocabularyPack (
+    vocabulary_pack_id INT AUTO_INCREMENT PRIMARY KEY,
+    pack_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    unlock_title_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_vocabularypack_unlock_title
+      FOREIGN KEY (unlock_title_id) REFERENCES Title(title_id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
+  )
+`);
+  await mysqlConnectionPool.query(`
     CREATE TABLE IF NOT EXISTS Template (
     template_id INT AUTO_INCREMENT PRIMARY KEY,
     template_name VARCHAR(100) NOT NULL,
@@ -121,8 +136,14 @@ try {
     word_id INT AUTO_INCREMENT PRIMARY KEY,
     word_text VARCHAR(100) NOT NULL,
     part_of_speech VARCHAR(50) NOT NULL,
+    vocabulary_pack_id INT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_word_vocabulary_pack
+      FOREIGN KEY (vocabulary_pack_id) REFERENCES VocabularyPack(vocabulary_pack_id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
   )
 `);
   await mysqlConnectionPool.query(`
