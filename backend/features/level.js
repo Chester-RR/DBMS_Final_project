@@ -35,6 +35,7 @@ function titleRequirementIsMet(requirement, user) {
     return Number(user.owned_avatar_count) >= 3;
   }
   if (requirement.includes("generation_count >= 100")) return user.generation_count >= 100;
+  if (requirement.includes("generation_count >= 50")) return user.generation_count >= 50;
   if (requirement.includes("generation_count >= 30")) return user.generation_count >= 30;
 
   return false;

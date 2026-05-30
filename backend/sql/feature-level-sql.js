@@ -12,6 +12,7 @@ try {
       ('終極廢文鍊金術士', '接近滿級的生成大師，把無意義煉成了作品。', 'level >= 45', 'workspace_premium'),
       ('資深孤獨者', '帳號創建滿 30 天，仍然在這裡默默生成。', 'account_age_days >= 30', 'hourglass'),
       ('逗號召喚師', '累積生成 30 句，開始懂得呼吸與停頓。', 'generation_count >= 30', 'more_horiz'),
+      ('通靈 Debugger', '累積生成 50 句，解鎖特殊模板的前置稱號。', 'generation_count >= 50', 'auto_awesome'),
       ('百句鍛造者', '累積生成 100 句，文字肌肉已經很明顯。', 'generation_count >= 100', 'fitness_center')
     ON DUPLICATE KEY UPDATE
       description = VALUES(description),
