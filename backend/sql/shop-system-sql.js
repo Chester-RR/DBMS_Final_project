@@ -24,7 +24,7 @@ async function indexExists(tableName, indexName) {
 try {
   await mysqlConnectionPool.query(`
     ALTER TABLE User
-    MODIFY coin_balance INT NOT NULL DEFAULT 2000
+    MODIFY coin_balance INT NOT NULL DEFAULT 0
   `);
 
   if (!(await indexExists("ShopItem", "uq_shopitem_name_type"))) {

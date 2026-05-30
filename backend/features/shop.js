@@ -1,5 +1,6 @@
 import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
+import { CoinTransactionError, recordCoinTransaction } from "./coin.js";
 
 const router = express.Router();
 
@@ -216,19 +217,24 @@ router.post("/:userId/purchase", async (req, res) => {
     }
 
     await connection.query(
-      "UPDATE User SET coin_balance = coin_balance - ? WHERE user_id = ?",
-      [item.price, req.params.userId],
-    );
-
-    await connection.query(
       "INSERT INTO UserItem (user_id, item_id, purchased_at, is_equipped) VALUES (?, ?, NOW(), FALSE)",
       [req.params.userId, itemId],
     );
 
-    await connection.query(
+    const [purchaseResult] = await connection.query(
       "INSERT INTO PurchaseRecord (user_id, item_id, price_at_purchase, purchased_at) VALUES (?, ?, ?, NOW())",
       [req.params.userId, itemId, item.price],
     );
+
+    if (item.price > 0) {
+      await recordCoinTransaction(connection, {
+        userId: req.params.userId,
+        amount: -Number(item.price),
+        reasonType: "purchase",
+        reasonDescription: `購買頭像：${item.item_name}`,
+        purchaseId: purchaseResult.insertId,
+      });
+    }
 
     await awardLoyalCustomerTitleIfEligible(req.params.userId, connection);
 
@@ -244,6 +250,11 @@ router.post("/:userId/purchase", async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error("Failed to purchase item:", error);
+
+    if (error instanceof CoinTransactionError && error.code === "INSUFFICIENT_COINS") {
+      return res.status(400).json({ success: false, message: "Not enough coins" });
+    }
+
     return res.status(500).json({ success: false, message: "Purchase failed" });
   } finally {
     connection.release();

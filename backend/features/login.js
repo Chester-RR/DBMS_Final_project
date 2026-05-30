@@ -6,6 +6,7 @@
 
 import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
+import { recordCoinTransaction, SIGNUP_BONUS_COINS } from "./coin.js";
 
 const router = express.Router();
 const DEFAULT_TITLE_NAME = "無名生成者";
@@ -49,12 +50,19 @@ router.post("/signup", async (req, res) => {
         level,
         coin_balance
       )
-      VALUES (?, ?, ?, NOW(), NOW(), 0, 1, 2000)
+      VALUES (?, ?, ?, NOW(), NOW(), 0, 1, 0)
       `,
       [userName, email, password],
     );
 
     const userId = result.insertId;
+
+    const signupBonus = await recordCoinTransaction(connection, {
+      userId,
+      amount: SIGNUP_BONUS_COINS,
+      reasonType: "signup_bonus",
+      reasonDescription: "新使用者啟動金",
+    });
 
     await connection.query(
       `
@@ -89,7 +97,7 @@ router.post("/signup", async (req, res) => {
         email: email,
         admin: 0,
         level: 1,
-        coin_balance: 2000,
+        coin_balance: signupBonus.balance_after,
       },
     });
   } catch (error) {

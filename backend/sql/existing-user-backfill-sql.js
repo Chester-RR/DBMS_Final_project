@@ -1,4 +1,5 @@
 import mysqlConnectionPool from "../lib/mysql.js";
+import { recordCoinTransaction, SIGNUP_BONUS_COINS } from "../features/coin.js";
 
 const DEFAULT_TITLE_NAME = "無名生成者";
 const DEFAULT_FRAME_NAME = "新芽邊框";
@@ -117,17 +118,33 @@ async function backfillForumResonanceTitle(connection) {
   );
 }
 
+async function backfillSignupBonusForZeroBalanceUsers(connection) {
+  const [users] = await connection.query(`
+    SELECT u.user_id
+    FROM User u
+    LEFT JOIN CoinRecord cr
+      ON cr.user_id = u.user_id
+     AND cr.reason_type = 'signup_bonus'
+    WHERE u.coin_balance = 0
+      AND cr.coin_record_id IS NULL
+  `);
+
+  for (const user of users) {
+    await recordCoinTransaction(connection, {
+      userId: user.user_id,
+      amount: SIGNUP_BONUS_COINS,
+      reasonType: "signup_bonus",
+      reasonDescription: "舊使用者補發新手啟動金",
+    });
+  }
+}
+
 const connection = await mysqlConnectionPool.getConnection();
 
 try {
   await connection.beginTransaction();
 
-  await connection.query(`
-    UPDATE User
-    SET coin_balance = 2000
-    WHERE coin_balance = 0
-  `);
-
+  await backfillSignupBonusForZeroBalanceUsers(connection);
   await backfillRequirementTitles(connection);
   await backfillDefaultEquippedTitle(connection);
   await backfillEligibleFrames(connection);

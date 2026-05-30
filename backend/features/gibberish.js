@@ -1,5 +1,9 @@
 import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
+import {
+  GENERATION_REWARD_COINS,
+  recordCoinTransaction,
+} from "./coin.js";
 import { syncUserRewards } from "./level.js";
 
 const router = express.Router();
@@ -579,6 +583,14 @@ router.post("/generate", async (req, res) => {
       );
     }
 
+    const coinReward = await recordCoinTransaction(connection, {
+      userId,
+      amount: GENERATION_REWARD_COINS,
+      reasonType: "generation_reward",
+      reasonDescription: "成功生成亂語獎勵",
+      gibberishId,
+    });
+
     await connection.commit();
 
     // 6. 回傳給前端
@@ -590,6 +602,7 @@ router.post("/generate", async (req, res) => {
       is_special: template.is_special,
       content,
       words: usedWords,
+      coin_reward: coinReward,
     });
   } catch (error) {
     await connection.rollback();
