@@ -5,6 +5,7 @@ const router = express.Router();
 
 const MAX_LEVEL = 50;
 const GENERATIONS_PER_LEVEL = 5;
+const LOYAL_CUSTOMER_AVATAR_NAME = "\u5546\u5e97\u5e38\u5ba2\u9650\u5b9a\u982d\u50cf";
 
 function calculateLevel(generationCount) {
   const safeCount = Number(generationCount) || 0;
@@ -29,6 +30,9 @@ function titleRequirementIsMet(requirement, user) {
   if (requirement.includes("account_age_days >= 30")) return accountAgeDays >= 30;
   if (requirement.includes("received_like_count >= 10")) {
     return Number(user.received_like_count) >= 10;
+  }
+  if (requirement.includes("owned_avatar_count >= 3")) {
+    return Number(user.owned_avatar_count) >= 3;
   }
   if (requirement.includes("generation_count >= 100")) return user.generation_count >= 100;
   if (requirement.includes("generation_count >= 30")) return user.generation_count >= 30;
@@ -59,10 +63,19 @@ async function getUser(userId) {
            ON gl.gibberish_id = g.gibberish_id
          WHERE g.user_id = u.user_id
            AND gl.user_id <> u.user_id
-       ), 0) AS received_like_count
+       ), 0) AS received_like_count,
+       COALESCE((
+         SELECT COUNT(*)
+         FROM UserItem ui
+         JOIN ShopItem si
+           ON ui.item_id = si.item_id
+         WHERE ui.user_id = u.user_id
+           AND si.item_type = 'avatar'
+           AND si.item_name <> ?
+       ), 0) AS owned_avatar_count
      FROM User u
      WHERE u.user_id = ?`,
-    [userId],
+    [LOYAL_CUSTOMER_AVATAR_NAME, userId],
   );
 
   return rows[0];
