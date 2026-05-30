@@ -2,6 +2,60 @@ import express from "express";
 import mysqlConnectionPool from "../lib/mysql.js";
 
 const router = express.Router();
+const FORUM_RESONANCE_TITLE_NAME = "\u8ad6\u58c7\u5171\u9cf4\u8005";
+const FORUM_RESONANCE_BADGE = {
+  label: FORUM_RESONANCE_TITLE_NAME,
+  icon: "campaign",
+};
+
+async function awardForumResonanceTitleIfEligible(connection, userId) {
+  const [likeRows] = await connection.query(
+    `
+    SELECT COUNT(*) AS received_like_count
+    FROM GibberishLike gl
+    JOIN Gibberish g
+      ON gl.gibberish_id = g.gibberish_id
+    WHERE g.user_id = ?
+      AND gl.user_id <> g.user_id
+    `,
+    [userId],
+  );
+
+  const receivedLikeCount = Number(likeRows[0].received_like_count);
+
+  if (receivedLikeCount < 10) {
+    return false;
+  }
+
+  const [result] = await connection.query(
+    `
+    INSERT IGNORE INTO TitleAward (user_id, title_id, is_equipped)
+    SELECT ?, title_id, FALSE
+    FROM Title
+    WHERE title_name = ?
+    `,
+    [userId, FORUM_RESONANCE_TITLE_NAME],
+  );
+
+  return result.affectedRows > 0;
+}
+
+async function userHasForumResonanceTitle(connection, userId) {
+  const [rows] = await connection.query(
+    `
+    SELECT ta.title_award_id
+    FROM TitleAward ta
+    JOIN Title title
+      ON ta.title_id = title.title_id
+    WHERE ta.user_id = ?
+      AND title.title_name = ?
+    LIMIT 1
+    `,
+    [userId, FORUM_RESONANCE_TITLE_NAME],
+  );
+
+  return rows.length > 0;
+}
 
 /*
   GET /forum?user_id=1
@@ -28,6 +82,14 @@ router.get("/", async (req, res) => {
         g.content,
         g.created_at,
         g.pinned,
+        EXISTS (
+          SELECT 1
+          FROM TitleAward ta
+          JOIN Title title
+            ON ta.title_id = title.title_id
+          WHERE ta.user_id = g.user_id
+            AND title.title_name = ?
+        ) AS author_has_forum_resonance_badge,
         COUNT(gl.gibberish_like_id) AS like_count,
         MAX(
           CASE
@@ -55,7 +117,7 @@ router.get("/", async (req, res) => {
         g.pinned
       ORDER BY g.created_at DESC
       `,
-      [viewerUserId],
+      [FORUM_RESONANCE_TITLE_NAME, viewerUserId],
     );
 
     res.json({
@@ -71,6 +133,9 @@ router.get("/", async (req, res) => {
         pinned: Boolean(post.pinned),
         like_count: Number(post.like_count),
         liked_by_me: Boolean(post.liked_by_me),
+        author_badge: post.author_has_forum_resonance_badge
+          ? FORUM_RESONANCE_BADGE
+          : null,
       })),
     });
   } catch (error) {
@@ -105,6 +170,14 @@ router.get("/top-liked-today", async (req, res) => {
         g.content,
         g.created_at,
         g.pinned,
+        EXISTS (
+          SELECT 1
+          FROM TitleAward ta
+          JOIN Title title
+            ON ta.title_id = title.title_id
+          WHERE ta.user_id = g.user_id
+            AND title.title_name = ?
+        ) AS author_has_forum_resonance_badge,
         COUNT(today_like.gibberish_like_id) AS like_count,
         MAX(
           CASE
@@ -137,7 +210,7 @@ router.get("/top-liked-today", async (req, res) => {
       ORDER BY like_count DESC, g.gibberish_id DESC
       LIMIT 3
       `,
-      [viewerUserId],
+      [FORUM_RESONANCE_TITLE_NAME, viewerUserId],
     );
 
     res.json({
@@ -154,6 +227,9 @@ router.get("/top-liked-today", async (req, res) => {
         pinned: Boolean(item.pinned),
         like_count: Number(item.like_count),
         liked_by_me: Boolean(item.liked_by_me),
+        author_badge: item.author_has_forum_resonance_badge
+          ? FORUM_RESONANCE_BADGE
+          : null,
       })),
     });
   } catch (error) {
@@ -330,6 +406,8 @@ router.post("/likes/toggle", async (req, res) => {
       取消愛心不會觸發成就。
     */
     if (liked && gibberishOwnerId !== userId) {
+      await awardForumResonanceTitleIfEligible(connection, gibberishOwnerId);
+
       let achievementContent = "";
 
       if (likeCount === 1) {
@@ -379,6 +457,11 @@ router.post("/likes/toggle", async (req, res) => {
       }
     }
 
+    const authorHasForumResonanceBadge = await userHasForumResonanceTitle(
+      connection,
+      gibberishOwnerId,
+    );
+
     await connection.commit();
 
     res.json({
@@ -386,6 +469,7 @@ router.post("/likes/toggle", async (req, res) => {
       gibberish_id: gibberishId,
       liked,
       like_count: likeCount,
+      author_badge: authorHasForumResonanceBadge ? FORUM_RESONANCE_BADGE : null,
     });
   } catch (error) {
     await connection.rollback();

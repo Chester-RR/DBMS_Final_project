@@ -27,6 +27,9 @@ function titleRequirementIsMet(requirement, user) {
   if (requirement.includes("level >= 5")) return user.level >= 5;
   if (requirement.includes("level >= 1")) return user.level >= 1;
   if (requirement.includes("account_age_days >= 30")) return accountAgeDays >= 30;
+  if (requirement.includes("received_like_count >= 10")) {
+    return Number(user.received_like_count) >= 10;
+  }
   if (requirement.includes("generation_count >= 100")) return user.generation_count >= 100;
   if (requirement.includes("generation_count >= 30")) return user.generation_count >= 30;
 
@@ -41,7 +44,24 @@ function parsePositiveInteger(value) {
 
 async function getUser(userId) {
   const [rows] = await mysqlConnectionPool.query(
-    "SELECT user_id, user_name, email, created_at, level, coin_balance, generation_count FROM User WHERE user_id = ?",
+    `SELECT
+       u.user_id,
+       u.user_name,
+       u.email,
+       u.created_at,
+       u.level,
+       u.coin_balance,
+       u.generation_count,
+       COALESCE((
+         SELECT COUNT(*)
+         FROM GibberishLike gl
+         JOIN Gibberish g
+           ON gl.gibberish_id = g.gibberish_id
+         WHERE g.user_id = u.user_id
+           AND gl.user_id <> u.user_id
+       ), 0) AS received_like_count
+     FROM User u
+     WHERE u.user_id = ?`,
     [userId],
   );
 

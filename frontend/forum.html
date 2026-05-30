@@ -340,6 +340,30 @@
         font-weight: 800;
       }
 
+      .author-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .author-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(8, 107, 67, 0.1);
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .author-badge .material-symbols-outlined {
+        font-size: 16px;
+      }
+
       .time {
         margin-top: 4px;
         font-size: 14px;
@@ -958,6 +982,12 @@
         rankingPosts.forEach((post, index) => {
           const card = document.createElement("article");
           card.className = "ranking-card";
+          const authorBadge = post.author_badge
+            ? `<span class="author-badge">
+                <span class="material-symbols-outlined">${escapeHTML(post.author_badge.icon)}</span>
+                ${escapeHTML(post.author_badge.label)}
+              </span>`
+            : "";
 
           card.innerHTML = `
         <div class="rank-badge">${post.rank || index + 1}</div>
@@ -967,7 +997,10 @@
         </div>
 
         <div class="ranking-meta">
-          <span>by ${escapeHTML(post.user_name)}</span>
+          <span class="author-line">
+            <span>by ${escapeHTML(post.user_name)}</span>
+            ${authorBadge}
+          </span>
           <span class="like-pill">♡ ${post.like_count}</span>
         </div>
       `;
@@ -992,11 +1025,20 @@
         forumPosts.forEach((post) => {
           const card = document.createElement("article");
           card.className = "forum-card";
+          const authorBadge = post.author_badge
+            ? `<span class="author-badge">
+                <span class="material-symbols-outlined">${escapeHTML(post.author_badge.icon)}</span>
+                ${escapeHTML(post.author_badge.label)}
+              </span>`
+            : "";
 
           card.innerHTML = `
         <div class="forum-card-top">
           <div>
-            <div class="author">by ${escapeHTML(post.user_name)}</div>
+            <div class="author author-line">
+              <span>by ${escapeHTML(post.user_name)}</span>
+              ${authorBadge}
+            </div>
             <div class="time">${formatDate(post.created_at)}</div>
           </div>
 
@@ -1111,6 +1153,7 @@
               ...post,
               liked_by_me: data.liked,
               like_count: data.like_count,
+              author_badge: data.author_badge ?? post.author_badge,
             };
           });
 
