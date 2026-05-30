@@ -30,15 +30,73 @@ try {
   )
 `);
   await mysqlConnectionPool.query(`
+  CREATE TABLE IF NOT EXISTS Title (
+    title_id INT AUTO_INCREMENT PRIMARY KEY,
+    title_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    requirement TEXT NOT NULL,
+    icon VARCHAR(255),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+  await mysqlConnectionPool.query(`
     CREATE TABLE IF NOT EXISTS Template (
     template_id INT AUTO_INCREMENT PRIMARY KEY,
     template_name VARCHAR(100) NOT NULL,
     structure TEXT NOT NULL,
     genre VARCHAR(50) NOT NULL,
+    is_special BOOLEAN NOT NULL DEFAULT FALSE,
+    unlock_title_id INT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_template_unlock_title
+      FOREIGN KEY (unlock_title_id) REFERENCES Title(title_id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE,
+
+    CONSTRAINT chk_template_is_special
+      CHECK (is_special IN (0, 1))
     )
 `);
+  await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_template_unlock_rule_insert
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_template_unlock_rule_insert
+    BEFORE INSERT ON Template
+    FOR EACH ROW
+    BEGIN
+      IF NEW.is_special = TRUE AND NEW.unlock_title_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Special template requires unlock_title_id';
+      END IF;
+
+      IF NEW.is_special = FALSE AND NEW.unlock_title_id IS NOT NULL THEN
+        SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Normal template cannot have unlock_title_id';
+      END IF;
+    END
+  `);
+  await mysqlConnectionPool.query(`
+    DROP TRIGGER IF EXISTS trg_template_unlock_rule_update
+  `);
+  await mysqlConnectionPool.query(`
+    CREATE TRIGGER trg_template_unlock_rule_update
+    BEFORE UPDATE ON Template
+    FOR EACH ROW
+    BEGIN
+      IF NEW.is_special = TRUE AND NEW.unlock_title_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Special template requires unlock_title_id';
+      END IF;
+
+      IF NEW.is_special = FALSE AND NEW.unlock_title_id IS NOT NULL THEN
+        SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Normal template cannot have unlock_title_id';
+      END IF;
+    END
+  `);
   await mysqlConnectionPool.query(`
   CREATE TABLE IF NOT EXISTS TemplateBlank (
     blank_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,16 +175,6 @@ try {
 
     CONSTRAINT chk_composition_word_order
       CHECK (word_order > 0)
-  )
-`);
-  await mysqlConnectionPool.query(`
-  CREATE TABLE IF NOT EXISTS Title (
-    title_id INT AUTO_INCREMENT PRIMARY KEY,
-    title_name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    requirement TEXT NOT NULL,
-    icon VARCHAR(255),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )
 `);
   await mysqlConnectionPool.query(`

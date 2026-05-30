@@ -70,6 +70,22 @@ const templates = [
     genre: "school",
     blanks: ["noun", "adjective", "verb", "ending_phrase"],
   },
+  {
+    template_name: "玄學祭祀",
+    structure: "我對著 {1} 進行 {2}，希望 {3} 可以自己 {4}",
+    genre: "mystic",
+    is_special: true,
+    unlock_title_name: "通靈 Debugger",
+    blanks: ["noun", "ritual_verb", "noun", "verb"],
+  },
+  {
+    template_name: "高階混沌模板",
+    structure: "當 {1} 遇上 {2}，整個系統開始 {3}，最後只剩下 {4}",
+    genre: "chaos",
+    is_special: true,
+    unlock_title_name: "百句鍛造者",
+    blanks: ["noun", "noun", "verb", "ending_phrase"],
+  },
 ];
 
 // Word 用來放進模板的單字
@@ -255,6 +271,15 @@ const wordsByPartOfSpeech = {
     "助教應該看不出來",
     "明天的我會處理",
   ],
+
+  ritual_verb: [
+    "重啟祭祀",
+    "縮排祈福",
+    "部署占卜",
+    "快取淨化",
+    "錯誤碼超渡",
+    "鍵盤結界",
+  ],
 };
 
 async function insertWords(connection) {
@@ -292,6 +317,27 @@ async function insertWords(connection) {
 
 async function insertTemplates(connection) {
   for (const template of templates) {
+    const isSpecial = Boolean(template.is_special);
+    let unlockTitleId = null;
+
+    if (isSpecial) {
+      const [titles] = await connection.query(
+        `
+        SELECT title_id
+        FROM Title
+        WHERE title_name = ?
+        LIMIT 1
+        `,
+        [template.unlock_title_name],
+      );
+
+      if (titles.length === 0) {
+        throw new Error(`Unlock title not found: ${template.unlock_title_name}`);
+      }
+
+      unlockTitleId = titles[0].title_id;
+    }
+
     const [existingTemplates] = await connection.query(
       `
       SELECT template_id
@@ -313,10 +359,12 @@ async function insertTemplates(connection) {
         SET
           structure = ?,
           genre = ?,
+          is_special = ?,
+          unlock_title_id = ?,
           updated_at = NOW()
         WHERE template_id = ?
         `,
-        [template.structure, template.genre, templateId],
+        [template.structure, template.genre, isSpecial, unlockTitleId, templateId],
       );
     } else {
       const [templateResult] = await connection.query(
@@ -325,12 +373,20 @@ async function insertTemplates(connection) {
           template_name,
           structure,
           genre,
+          is_special,
+          unlock_title_id,
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, NOW(), NOW())
+        VALUES (?, ?, ?, ?, ?, NOW(), NOW())
         `,
-        [template.template_name, template.structure, template.genre],
+        [
+          template.template_name,
+          template.structure,
+          template.genre,
+          isSpecial,
+          unlockTitleId,
+        ],
       );
 
       templateId = templateResult.insertId;
